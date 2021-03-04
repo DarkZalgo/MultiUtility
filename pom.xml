@@ -32,12 +32,12 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>16-ea+6</version>
+            <version>17-ea+2</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>16-ea+6</version>
+            <version>17-ea+2</version>
         </dependency>
     </dependencies>
     <build>
@@ -125,28 +125,6 @@
                     </execution>
                 </executions>
             </plugin>
-           <!-- <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
-                <configuration>
-                    <finalName>standalone-${artifactId}</finalName>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.darkzalgo.presentation.gui.MainApp</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-
-            </plugin> -->
         </plugins>
     </build>
 

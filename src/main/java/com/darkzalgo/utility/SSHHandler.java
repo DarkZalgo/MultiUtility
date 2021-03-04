@@ -27,13 +27,6 @@ public class SSHHandler
 
     private JSch jsch = new JSch();
 
-
-
-    private Semaphore mutex = new Semaphore(1);
-
-    static int count = 0;
-    private int timeOut = 5000;
-
     private List<String> multiIpList = new ArrayList<>();
 
     private int[] portsToCheck = {22,3735};
@@ -65,28 +58,27 @@ public class SSHHandler
         String user = timeClock.getUsername();
         String host = timeClock.getHost();
         logger.info("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
-        sendLabel("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
+        setMainLabel("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
         try {
             session = jsch.getSession(user, host, port);
             session.setPassword(password);
             session.setConfig("StrictHostKeyChecking", "no");
             session.setConfig("PreferredAuthentications", "password");
             session.setConfig("MaxAuthTries", "3");
+
             synchronized (this)
             {
-            session.connect(timeOut);
+                session.connect(5000);
             }
 
-
-
             logger.info("Successfully connected to " + user + "@" + host + ":" + port);
-            sendLabel("Successfully connected to " + user + "@" + host + ":" + port);
+            setMainLabel("Successfully connected to " + user + "@" + host + ":" + port);
             timeClock.setCanConnect(true);
         }catch (JSchException e )
         {
             SimpleDateFormat formatter = new SimpleDateFormat("MM-dd-yyyy hh:mm:ss");
             String date = formatter.format(new Date(System.currentTimeMillis()));
-            sendError("[" + date + "] --  " + e.getLocalizedMessage()+ " at " + timeClock.getHost());
+            appendMainErrorArea("[" + date + "] --  " + e.getLocalizedMessage()+ " at " + timeClock.getHost());
             /*logger.info("Could not connect to " + user + "@" + host + ":" + port);
             sendLabel("Could not connect to " + user + "@" + host + ":" + port);*/
             logger.info(e.getLocalizedMessage());
@@ -98,14 +90,14 @@ public class SSHHandler
         return session;
     }
 
-    private void sendLabel(String msg)
+    private void setMainLabel(String msg)
     {
         Platform.runLater(()->{
             controller.setMsgLabelText(msg);
         });
     }
 
-    private void sendError(String msg)
+    private void appendMainErrorArea(String msg)
     {
         Platform.runLater(()->{
             controller.appendErrorTextArea(msg);
@@ -148,8 +140,7 @@ public class SSHHandler
                 ((ChannelExec) channel).setCommand(cmds[i]);
 
                 InputStream cmdStream = channel.getInputStream();
-                int finalI = i;
-                sendLabel("Sending command \n" + cmds[finalI] + " \nto " + user + "@" + host + ":" + port);
+                setMainLabel("Sending command \n" + cmds[i] + " \nto " + user + "@" + host + ":" + port);
                 logger.info("Sending command \n" + cmds[i] + " \nto " + user + "@" + host + ":" + port);
                 channel.connect();
 
@@ -166,9 +157,9 @@ public class SSHHandler
                 cmdOutput[i] = cmdOutputBuilder.toString();
             }
 
-            sendLabel("Done sending commands to " + user + "@" + host + ":" + port);
+            setMainLabel("Done sending commands to " + user + "@" + host + ":" + port);
             disconnect(session);
-            sendLabel("Disconnected from " + user + "@" + host + ":" + port);
+            setMainLabel("Disconnected from " + user + "@" + host + ":" + port);
             return cmdOutput;
             }
         };
@@ -202,7 +193,7 @@ public class SSHHandler
                 ((ChannelExec) channel).setCommand(cmd);
 
                 InputStream cmdStream = channel.getInputStream();
-                sendLabel("Sending command \n" + cmd + " \nto " + user + "@" + host + ":" + port);
+                setMainLabel("Sending command \n" + cmd + " \nto " + user + "@" + host + ":" + port);
                 logger.info("Sending command \n" + cmd + " \nto " + user + "@" + host + ":" + port);
                 channel.connect();
 
@@ -233,30 +224,6 @@ public class SSHHandler
     }
 
     public void getClockInfo(TimeClock timeClock) throws IOException, JSchException, InterruptedException {
-       /* Task task = new Task<Void>() {
-            @Override
-            public Void call() throws Exception {
-
-                String[] cmds = {
-                        "ls /etc/init.d|grep synergy",
-                        "cat /etc/mac.txt",
-                        "version",
-                        "uname -a|grep -o \"[A-Z][a-z][a-z] [0-9]\\(.*\\)[0-9][0-9][0-9][0-9]\" | sed 's/[0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\} [A-Z]\\{3\\} //g'",
-                        "cat /proc/uptime | awk \'{print $1}\'",
-                        "cat /etc/bootCount",
-                        "ls /home/admin/synergy",
-                        "ls /Arm/Synergy/SY",
-                        "grep url /home/admin/wbcs/conf/settings.conf",
-                        "grep ^SWV /home/admin/synergy/conf/sysconfig.properties|awk -F= '{print $2}'|awk -F. '{print $3}'"
-                };
-
-                sendMultiCmd(timeClock, cmds);
-                return null;
-            }
-        };
-
-        Thread taskThread = new Thread(task);
-        taskThread.start();*/
         String[] cmds = {
                 "ls /etc/init.d|grep synergy",
                 "cat /etc/mac.txt",
@@ -341,8 +308,7 @@ public class SSHHandler
 
     public void checkAllHosts(String subnet) throws IOException, InterruptedException, ExecutionException {
 
-        final List<String>[] resultIpList = new List[]{new ArrayList<>()};
-        List<String> finalResultIpList = resultIpList[0];
+        final List<String> resultIpList = new ArrayList<>();
 
         Task task = new Task<List<String>>() {
             @Override
@@ -363,50 +329,47 @@ public class SSHHandler
                             for (int port : portsToCheck)
                             {
                                 try {
-                                    sendLabel("Checking ip " + ip + " for connectivity...");
+                                    setMainLabel("Checking ip " + ip + " for connectivity...");
 
-                                    if (!finalResultIpList.contains(ip)) {
+                                    if (!resultIpList.contains(ip)) {
                                         logger.info("Testing " + ip + ":" + port + " for connectivity...");
                                         Socket socket = new Socket();
                                         socket.connect(new InetSocketAddress(ip, port), 75);
                                         logger.info("Port " + port + " is open on ip " + ip);
-                                        sendLabel("Port " + port + " is open on ip " + ip+ "!");
+                                        setMainLabel("Port " + port + " is open on ip " + ip+ "!");
                                         if (port == 8080) {
                                             logger.info("Host " + ip + " is up but SSH is not on.");
 
-                                        } else finalResultIpList.add(ip);
+                                        } else resultIpList.add(ip);
                                     }
 
                                 } catch (IOException e) {
                                     logger.info(e.getLocalizedMessage() + " for ip " + ip + ":" + port);
-                                    sendError(ip + ":" + port + " is not up or SSH is not turned on");
+                                    appendMainErrorArea(ip + ":" + port + " is not up or SSH is not turned on");
                                 }
                             }
                         }));
-                sendLabel("Found " + finalResultIpList.size() + " IP Addresses");
-            return finalResultIpList;
+                setMainLabel("Found " + resultIpList.size() + " IP Addresses");
+            return resultIpList;
         }
         };
-       /* Future<List<String>> future = executor.submit(callable);
-        resultIpList = future.get();
-        executor.shutdown();*/
+
        task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, new EventHandler<WorkerStateEvent>() {
            @Override
            public void handle(WorkerStateEvent workerStateEvent)
            {
-               resultIpList[0] = (List<String>) task.getValue();
-               controller.setIpTextAreaIPs(resultIpList[0]);
+               List<String> res = (List<String>) task.getValue();
+               controller.setIpTextAreaIPs(res);
            }
        });
        new Thread(task).start();
     }
 
 
-    public String checkHost(String ip) throws IOException {
+    public String checkHost(String ip)
+    {
         int timeout = 75;
         String ipOpenPort = null;
-        if (InetAddress.getByName(ip).isReachable(timeout))
-        {
             for (int port : portsToCheck)
             {
                 try {
@@ -416,7 +379,7 @@ public class SSHHandler
                     ipOpenPort = ip + "," + port;
                 } catch (IOException e) {logger.info(e.getLocalizedMessage() + " for ip " + ip + "and port " + port);}
             }
-        }
+
         return ipOpenPort;
     }
 

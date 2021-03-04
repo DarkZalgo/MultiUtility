@@ -29,6 +29,6 @@
       <TextArea fx:id="commandTextArea" layoutX="338.0" layoutY="286.0" prefHeight="147.0" prefWidth="166.0" />
       <Button layoutX="566.0" layoutY="432.0" mnemonicParsing="false" onAction="#darkMode" text="Dark Mode" />
       <ChoiceBox fx:id="subnetChoiceBox" layoutX="51.0" layoutY="273.0" prefHeight="26.0" prefWidth="101.0" />
-      <Label fx:id="msgLabel" layoutX="347.0" layoutY="234.0" />
+      <Label fx:id="msgLabel" layoutX="347.0" layoutY="225.0" />
    </children>
 </Pane>

@@ -204,13 +204,13 @@ public class MainController implements Initializable
             }
         }));
 
-        if(repeatCmdBox.isSelected())
+        if(repeatCmdBox.isSelected() && !cmd.equals(""))
         {
             RepeatTask task = new RepeatTask(timeClocks, cmd);
             timer = new Timer(true);
             timer.scheduleAtFixedRate(task, 0, seconds * 1000);
         }
-        else
+        else if (!cmd.equals(""))
         {
             logger.info("Sending " + cmd);
             timeClocks.forEach((n -> {

@@ -27,11 +27,13 @@ import java.util.*;
 
 public class TableViewController implements Initializable
 {
-    @FXML TableColumn modelColumn, imageColumn, ipColumn, macColumn, kernelVersionColumn, uptimeColumn, dateColumn, rebootColumn;
+    @FXML TableColumn<TimeClockStringProperties, String> modelColumn, imageColumn, ipColumn, macColumn, kernelVersionColumn, uptimeColumn, dateColumn, rebootColumn;
 
-    @FXML TableView clockInfoTable;
+    @FXML
+    TableView<TimeClockStringProperties> clockInfoTable;
 
-    @FXML ChoiceBox selectIpByImageBox;
+    @FXML
+    ChoiceBox<String> selectIpByImageBox;
 
     private SSHHandler sshHandler = new SSHHandler();
 
@@ -52,14 +54,14 @@ public class TableViewController implements Initializable
 
         Set<String> imageSet = new HashSet<String>();
 
-        modelColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("model"));
-        imageColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("image"));
-        ipColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("ipAddress"));
-        macColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("macAddress"));
-        kernelVersionColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("kernelVersion"));
-        uptimeColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("uptime"));
-        rebootColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("rebootCount"));
-        dateColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("date"));
+        modelColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("model"));
+        imageColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("image"));
+        ipColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("ipAddress"));
+        macColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("macAddress"));
+        kernelVersionColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("kernelVersion"));
+        uptimeColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("uptime"));
+        rebootColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("rebootCount"));
+        dateColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("date"));
 
         Callback<TableColumn<TimeClockStringProperties, String>,
                 TableCell<TimeClockStringProperties, String>> cellFactory
@@ -70,36 +72,33 @@ public class TableViewController implements Initializable
             @Override
             public void handle(TableColumn.CellEditEvent<TimeClockStringProperties, String> cell) {
                 TimeClockStringProperties currentCellProperties = cell.getTableView().getItems().get(cell.getTablePosition().getRow());
-                TimeClock clock = new TimeClock();
-                clock.setHost(currentCellProperties.getIpAddress());
-                try
+
+                if (!cell.getNewValue().trim().equals(cell.getOldValue().trim()))
                 {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                    alert.setTitle("MAC Change Confirmation");
-                    alert.setHeaderText("Are you sure you want to change MAC Address?");
-                    alert.setContentText("From\n" +cell.getOldValue() + "To\n" + cell.getNewValue() + "\nOn IP " + currentCellProperties.getIpAddress());
-                    alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
-                    alert.getDialogPane().setMinWidth(Region.USE_PREF_SIZE);
+                    try {
+                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                        alert.setTitle("MAC Change Confirmation");
+                        alert.setHeaderText("Are you sure you want to change MAC Address?");
+                        alert.setContentText("From\n" + cell.getOldValue() + "To\n" + cell.getNewValue() + "\nOn IP " + currentCellProperties.getIpAddress());
+                        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+                        alert.getDialogPane().setMinWidth(Region.USE_PREF_SIZE);
 
 
-                    Optional<ButtonType> res = alert.showAndWait();
-                    if (res.get() == ButtonType.OK)
-                    {
+                        Optional<ButtonType> res = alert.showAndWait();
+                        if (res.get() == ButtonType.OK) {
+                            TimeClock clock = new TimeClock();
+                            clock.setHost(currentCellProperties.getIpAddress());
 
-                        logger.info("Changing MAC to "+ cell.getNewValue());
-                        sshHandler.sendCmd("echo " + cell.getNewValue() + " > /etc/mac.txt ; reboot", clock);
-                        currentCellProperties.setMacAddress(cell.getNewValue());
-                    }
-                    else
-                        {
-                            currentCellProperties.setMacAddress(cell.getOldValue());
+                            logger.info("Changing MAC to " + cell.getNewValue());
+                            sshHandler.sendCmd("echo " + cell.getNewValue() + " > /etc/mac.txt ; reboot", clock);
+                            currentCellProperties.setMacAddress(cell.getNewValue());
+                        } else {
+                            cell.getTableView().getColumns().get(cell.getTablePosition().getColumn()).setVisible(false);
+                            cell.getTableView().getColumns().get(cell.getTablePosition().getColumn()).setVisible(true);
                         }
-                } catch (JSchException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    } catch (JSchException | IOException | InterruptedException e) {
+                        logger.info(e.getLocalizedMessage());
+                    }
                 }
 
 
@@ -108,32 +107,25 @@ public class TableViewController implements Initializable
         });
 
 
-        ipColumn.setComparator(new Comparator() {
-            @Override
-            public int compare(Object o, Object t1) {
-               return Integer.parseInt(o.toString().split("\\.")[3]) -  Integer.parseInt(t1.toString().split("\\.")[3]);
-
+        ipColumn.setComparator((o, t1) -> Integer.parseInt(o.toString().split("\\.")[3]) -  Integer.parseInt(t1.toString().split("\\.")[3]));
+        kernelVersionColumn.setComparator((Comparator<String>) (o, t1) -> {
+            SimpleDateFormat format = new SimpleDateFormat("MMM dd yyyy");
+            Date firstDate = null;
+            Date secondDate = null;
+            try {
+                firstDate = format.parse(o.toString());
+                secondDate = format.parse(t1.toString());
+            } catch (ParseException e) {
+                e.printStackTrace();
             }
-        });
-        kernelVersionColumn.setComparator(new Comparator() {
-            @Override
-            public int compare(Object o, Object t1) {
-                SimpleDateFormat format = new SimpleDateFormat("MMM dd yyyy");
-                Date firstDate = null;
-                Date secondDate = null;
-                try {
-                    firstDate = format.parse(o.toString());
-                    secondDate = format.parse(t1.toString());
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                return firstDate.compareTo(secondDate);
-            }
+            assert firstDate != null;
+            assert secondDate != null;
+            return firstDate.compareTo(secondDate);
         });
 
 
 
-        clocks.stream().forEach((n -> {
+        clocks.forEach((n -> {
             if(n.canConnect())
             {
                 timeClockStrings.add(new TimeClockStringProperties(
@@ -163,7 +155,7 @@ public class TableViewController implements Initializable
         if(selectIpByImageBox.getValue()!= null)
         {
             mainController.ipTextArea.clear();
-            String image = (String) selectIpByImageBox.getValue();
+            String image = selectIpByImageBox.getValue();
             ObservableList<TimeClockStringProperties> itemsByImage = clockInfoTable.getItems();
             itemsByImage.forEach((clock -> {
                 if (clock.getImage().equals(image))

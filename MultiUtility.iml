@@ -14,13 +14,13 @@
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-simple:1.7.30" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.30" level="project" />
     <orderEntry type="library" name="Maven: com.jcraft:jsch:0.1.55" level="project" />
-    <orderEntry type="library" name="Maven: org.openjfx:javafx-controls:16-ea+6" level="project" />
-    <orderEntry type="library" name="Maven: org.openjfx:javafx-controls:linux:16-ea+6" level="project" />
-    <orderEntry type="library" name="Maven: org.openjfx:javafx-graphics:16-ea+6" level="project" />
-    <orderEntry type="library" name="Maven: org.openjfx:javafx-graphics:linux:16-ea+6" level="project" />
-    <orderEntry type="library" name="Maven: org.openjfx:javafx-base:16-ea+6" level="project" />
-    <orderEntry type="library" name="Maven: org.openjfx:javafx-base:linux:16-ea+6" level="project" />
-    <orderEntry type="library" name="Maven: org.openjfx:javafx-fxml:16-ea+6" level="project" />
-    <orderEntry type="library" name="Maven: org.openjfx:javafx-fxml:linux:16-ea+6" level="project" />
+    <orderEntry type="library" name="Maven: org.openjfx:javafx-controls:17-ea+2" level="project" />
+    <orderEntry type="library" name="Maven: org.openjfx:javafx-controls:linux:17-ea+2" level="project" />
+    <orderEntry type="library" name="Maven: org.openjfx:javafx-graphics:17-ea+2" level="project" />
+    <orderEntry type="library" name="Maven: org.openjfx:javafx-graphics:linux:17-ea+2" level="project" />
+    <orderEntry type="library" name="Maven: org.openjfx:javafx-base:17-ea+2" level="project" />
+    <orderEntry type="library" name="Maven: org.openjfx:javafx-base:linux:17-ea+2" level="project" />
+    <orderEntry type="library" name="Maven: org.openjfx:javafx-fxml:17-ea+2" level="project" />
+    <orderEntry type="library" name="Maven: org.openjfx:javafx-fxml:linux:17-ea+2" level="project" />
   </component>
 </module>
