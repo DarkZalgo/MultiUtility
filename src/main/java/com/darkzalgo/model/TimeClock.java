@@ -22,7 +22,7 @@ public class TimeClock
     private SimpleStringProperty uptime = new SimpleStringProperty();
     private SimpleStringProperty version = new SimpleStringProperty();
     private SimpleStringProperty rebootCount = new SimpleStringProperty();
-    
+
     private int port = 22;
 
     private long delay;
