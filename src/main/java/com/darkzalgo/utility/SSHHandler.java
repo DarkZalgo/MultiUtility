@@ -2,6 +2,7 @@ package com.darkzalgo.utility;
 
 
 import com.darkzalgo.presentation.controllers.MainController;
+import com.darkzalgo.presentation.gui.Context;
 import com.jcraft.jsch.*;
 import com.darkzalgo.model.TimeClock;
 
@@ -56,7 +57,7 @@ public class SSHHandler
         String password = timeClock.getPassword();
         int port = timeClock.getPort();
         String user = timeClock.getUsername();
-        String host = timeClock.getHost();
+        String host = timeClock.getIpAddress();
         logger.info("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
         setMainLabel("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
         try {
@@ -64,7 +65,7 @@ public class SSHHandler
             session.setPassword(password);
             session.setConfig("StrictHostKeyChecking", "no");
             session.setConfig("PreferredAuthentications", "password");
-            session.setConfig("MaxAuthTries", "3");
+            session.setConfig("MaxAuthTries", "1");
 
             synchronized (this)
             {
@@ -73,18 +74,23 @@ public class SSHHandler
 
             logger.info("Successfully connected to " + user + "@" + host + ":" + port);
             setMainLabel("Successfully connected to " + user + "@" + host + ":" + port);
-            timeClock.setCanConnect(true);
+            timeClock.setRemoveFlag(false);
+
         }catch (JSchException e )
         {
             SimpleDateFormat formatter = new SimpleDateFormat("MM-dd-yyyy hh:mm:ss");
             String date = formatter.format(new Date(System.currentTimeMillis()));
-            appendMainErrorArea("[" + date + "] --  " + e.getLocalizedMessage()+ " at " + timeClock.getHost());
+            appendMainErrorArea("[" + date + "] --  " + e.getLocalizedMessage()+ " at " + timeClock.getIpAddress());
             /*logger.info("Could not connect to " + user + "@" + host + ":" + port);
             sendLabel("Could not connect to " + user + "@" + host + ":" + port);*/
-            logger.info(e.getLocalizedMessage());
-            if (e.getLocalizedMessage().toLowerCase().contains("auth fail"))
+            String error = e.getLocalizedMessage();
+            logger.info(error);
+            if (error.toLowerCase().contains("auth"))
             {
+                setMainLabel("Authorization Failure at " + timeClock.getIpAddress());
+                timeClock.setRemoveFlag(true);
                 timeClock.setCanConnect(false);
+                Context.getInstance().currentClocks().remove(Context.getInstance().currentClocks().indexOf(timeClock));
             }
         }
         return session;
@@ -118,7 +124,7 @@ public class SSHHandler
         }
     }
 
-    private void sendMultiCmd(TimeClock timeClock, String[] cmds) throws JSchException, IOException, InterruptedException {
+    private void sendMultiCmd(TimeClock timeClock, String[] cmds) {
         Task task = new Task<String[]>()
         {
 
@@ -128,7 +134,7 @@ public class SSHHandler
 
             int port = timeClock.getPort();
             String user = timeClock.getUsername();
-            String host = timeClock.getHost();
+            String host = timeClock.getIpAddress();
             String[] cmdOutput = new String[cmds.length];
             StringBuilder cmdOutputBuilder;
             Session session = connect(timeClock);
@@ -183,7 +189,7 @@ public class SSHHandler
             {
                 int port = timeClock.getPort();
                 String user = timeClock.getUsername();
-                String host = timeClock.getHost();
+                String host = timeClock.getIpAddress();
 
                 Session session = connect(timeClock);
                 Channel channel = session.openChannel("exec");
@@ -249,14 +255,39 @@ public class SSHHandler
         int upMinutes = ((uptime % 86400) % 3600) / 60;
         String image = "Unknown";
         String version = clockInfo[2];
+        timeClock.setVersion(clockInfo[9]);
         if(version.toLowerCase().contains("ta"))
             image = "XactTime";
         if (version.toLowerCase().contains("frontline") || clockInfo[9].toLowerCase().contains("fl"))
             image = "Frontline";
         else if (version.toLowerCase().contains("kronos"))
             image = "Kronos";
+
+        if (!image.equals("Kronos") || !image.equals("Frontline"))
+        {
+            if (version.contains("1.4.1"))
+            {
+                timeClock.setVersion("1.4.1");
+            } else if(version.contains("1.4.2"))
+            {
+                timeClock.setVersion("1.4.2");
+            } else if(version.contains("1.4.3")) {
+                timeClock.setVersion("1.4.3");
+            }
+
+        }
         if (clockInfo[6].toLowerCase().contains("wbcs"))
         {
+            if(version.contains("1.4.1") && version.contains("S"))
+            {
+                timeClock.setVersion("1.4.1 S");
+            } else if(version.contains("1.4.2") && version.contains("S"))
+            {
+                timeClock.setVersion("1.4.2 S");
+            } else if(version.contains("1.4.3") && version.contains("S"))
+            {
+                timeClock.setVersion("1.4.3 S");
+            }
             if (clockInfo[8].toLowerCase().contains("nhc"))
                 image = "NHC";
             else if (clockInfo[8].toLowerCase().contains("compass"))
@@ -283,10 +314,11 @@ public class SSHHandler
                 image = "New Hanover";
             else if (clockInfo[8].toLowerCase().contains("cha"))
                 image = "COA";
+            else if (clockInfo[8].toLowerCase().contains("chs"))
+                image = "CHS";
             else
                 image = "Infor";
         }
-
 
         if (clockInfo[6].toLowerCase().contains("menards"))
             image = "Menard's";
@@ -295,15 +327,15 @@ public class SSHHandler
         if (clockInfo[7].toLowerCase().contains("tress"))
             image = "Grupo";
 
-
-        timeClock.setMac(!clockInfo[1].equals("") ? clockInfo[1] : "Default");
+        timeClock.setMacAddress(!clockInfo[1].equals("") ? clockInfo[1] : "Default");
         timeClock.setModel(clockInfo[0].contains("X") ? "SYnergy/A20" : "SYnergy/A 2416");
         timeClock.setImage(image);
-        timeClock.setVersion(clockInfo[2]);
+
         timeClock.setKernelVersion(clockInfo[3]);
         timeClock.setUptime("Days: " + upDays + " Hrs: " + upHours + " Mins: " + upMinutes);
-        timeClock.setDate(date);
         timeClock.setRebootCount(clockInfo[5]);
+        timeClock.setCanConnect(true);
+        timeClock.setRemoveFlag(false);
     }
 
     public void checkAllHosts(String subnet) throws IOException, InterruptedException, ExecutionException {
@@ -322,10 +354,7 @@ public class SSHHandler
                     ipArray.add(subnet + i);
                 }
 
-                int count = 1;
-                ipArray.parallelStream().
-
-                        forEach((ip -> {
+                ipArray.parallelStream().forEach((ip -> {
                             for (int port : portsToCheck)
                             {
                                 try {
@@ -381,6 +410,18 @@ public class SSHHandler
             }
 
         return ipOpenPort;
+    }
+
+    public void sendThroughSFTP()
+    {
+        Task task = new Task<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                return null;
+            }
+        };
     }
 
 }

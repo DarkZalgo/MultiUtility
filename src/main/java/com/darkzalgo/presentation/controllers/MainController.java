@@ -6,6 +6,9 @@ import com.darkzalgo.model.TimeClock;
 import com.darkzalgo.utility.SSHHandler;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -14,6 +17,9 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -44,6 +50,8 @@ public class MainController implements Initializable
 
     @FXML Label msgLabel;
 
+    @FXML Pane rebootWindowPane;
+
     ToggleGroup cmdPresetGroup = new ToggleGroup();
 
     private boolean darkLight;
@@ -54,6 +62,14 @@ public class MainController implements Initializable
 
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
 
+    private TableViewController tableViewController;
+
+    private ObservableList<TimeClock> timeClocks;
+
+    private Parent tableViewRoot;
+
+    private Scene tableViewScene;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
@@ -61,10 +77,19 @@ public class MainController implements Initializable
         ipTextArea.setWrapText(true);
         errorTextArea.setWrapText(true);
         errorTextArea.setEditable(false);
-
+        /*final double START_WIDTH_ERROR_TEXT = Double.valueOf(errorTextArea.getPrefWidth());
+        final double START_PANE_WIDTH = rebootWindowPane.getPrefWidth();
+        logger.info(START_WIDTH_ERROR_TEXT + " asdf");*/
         removeGtFilesRadio.setToggleGroup(cmdPresetGroup);
         rebootRadio.setToggleGroup(cmdPresetGroup);
         getInfoRadio.setToggleGroup(cmdPresetGroup);
+
+        try {
+            tableViewRoot = new FXMLLoader(getClass().getResource("/tableViewWindow.fxml")).load();
+            tableViewScene = new Scene(tableViewRoot, 930, 400);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         timerLengthField.setDisable(true);
 
@@ -134,6 +159,25 @@ public class MainController implements Initializable
             }
         });
 
+       /* errorTextArea.focusedProperty().addListener((obs, oldValue, newValue) ->{
+       if(newValue)
+            {
+                Text text = new Text(errorTextArea.getText());
+                text.setFont(errorTextArea.getFont());
+                double width = text.getLayoutBounds().getWidth();
+                logger.info("width " + width + " wrappingwidth " + text.getLayoutBounds().getWidth());
+                if(width > START_WIDTH_ERROR_TEXT)
+                {
+                    errorTextArea.setPrefWidth(width * 1.2);
+                }
+            }
+       if(oldValue)
+       {
+           errorTextArea.setPrefWidth(START_WIDTH_ERROR_TEXT);
+       }
+
+        });*/
+
         subnetChoiceBox.getItems().add("192.168.6.");
         subnetChoiceBox.getItems().add("192.168.7.");
         subnetChoiceBox.getItems().add("192.168.1.");
@@ -146,6 +190,7 @@ public class MainController implements Initializable
     @FXML
     private void sendCmd(ActionEvent event) throws IOException, JSchException, InterruptedException {
         int seconds = 30;
+        tableViewController = Context.getInstance().getTableViewController();
         String ipPrefix = (String) subnetChoiceBox.getValue();
         String cmd = commandTextArea.getText();
         if (!timerLengthField.getText().equals(""))
@@ -157,7 +202,12 @@ public class MainController implements Initializable
         cancelTimerBtn.fire();
 
         TimeClock tempClock;
-        ArrayList<TimeClock> timeClocks = new ArrayList<>();
+        timeClocks = Context.getInstance().currentClocks();
+
+        timeClocks = FXCollections.observableArrayList();
+
+
+        timeClocks.clear();
 
         if (!(ipTextArea.getText().split(",").length > 0))
         {
@@ -166,8 +216,8 @@ public class MainController implements Initializable
             if(fullIP != null)
             {
                 tempClock = new TimeClock();
-                tempClock.setHost(ipPrefix + ipTextArea.getText());
-                logger.info("Added " + tempClock.getHost() + " to ip list");
+                tempClock.setIpAddress(ipPrefix + ipTextArea.getText());
+                logger.info("Added " + tempClock.getIpAddress() + " to ip list");
                 timeClocks.add(tempClock);
             }
         }
@@ -180,9 +230,9 @@ public class MainController implements Initializable
                     if(fullIP != null)
                     {
                         tempClock = new TimeClock();
-                        tempClock.setHost(ipPrefix + ip);
+                        tempClock.setIpAddress(ipPrefix + ip);
                         tempClock.setPort(Integer.parseInt(fullIP.split(",")[1]));
-                        logger.info("Added " + tempClock.getHost() + " to ip list");
+                        logger.info("Added " + tempClock.getIpAddress() + " to ip list");
                         timeClocks.add(tempClock);
                     }
                 }
@@ -194,13 +244,18 @@ public class MainController implements Initializable
             try
             {
                 sshHandler.getClockInfo(n);
+                if(n.flaggedForRemoval())
+                {
+                    logger.info("\n\n\nREMOVING " + n.getIpAddress());
+                    timeClocks.remove(timeClocks.indexOf(n));
+                }
             } catch (IOException e )
             {
                 e.printStackTrace();
             }catch (JSchException | InterruptedException e )
             {
-                logger.warn("Could not connect to " + n.getUsername() + "@" + n.getHost() + ":" + n.getPort() +" using password " + n.getPassword());
-                appendErrorTextArea("Could not connect to " + n.getUsername() + "@" + n.getHost() + ":" + n.getPort() +" using password " + n.getPassword() + "\n");
+                logger.warn("Could not connect to " + n.getUsername() + "@" + n.getIpAddress() + ":" + n.getPort() +" using password " + n.getPassword());
+                appendErrorTextArea("Could not connect to " + n.getUsername() + "@" + n.getIpAddress() + ":" + n.getPort() +" using password " + n.getPassword() + "\n");
             }
         }));
 
@@ -220,7 +275,7 @@ public class MainController implements Initializable
                     {
                         SimpleDateFormat formatter = new SimpleDateFormat("MM-dd-yyyy hh:mm:ss");
                         String date = formatter.format(new Date(System.currentTimeMillis()));
-                        errorTextArea.appendText("[" + date + "] -- Could not connect to " + n.getHost() + "\n");
+                        errorTextArea.appendText("[" + date + "] -- Could not connect to " + n.getIpAddress() + "\n");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -230,6 +285,7 @@ public class MainController implements Initializable
         Context.getInstance().setClocks(timeClocks);
 
     }
+
     @FXML
     private void cancel(ActionEvent event) throws SocketException, UnknownHostException
     {
@@ -248,29 +304,40 @@ public class MainController implements Initializable
     private void openTableView(ActionEvent event) {
         Node node = (Node) event.getSource();
 
-        try {
-            Stage tableViewStage = new Stage();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/tableViewWindow.fxml"));
-            Parent root = loader.load();
+        Stage tableViewStage = new Stage();
+//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/tableViewWindow.fxml"));
+//            Parent root = loader.load();
+        tableViewRoot.setStyle(node.getScene().getRoot().getStyle());
+        tableViewStage.setTitle("Clock Info Table");
+        tableViewStage.setScene(tableViewScene);
+        tableViewStage.initModality(Modality.WINDOW_MODAL);
 
-            root.setStyle(node.getScene().getRoot().getStyle());
-            tableViewStage.setTitle("Clock Info Table");
-            tableViewStage.setScene(new Scene(root, 930, 400));
-            tableViewStage.initModality(Modality.WINDOW_MODAL);
+            /*timeClocks.addListener(new ListChangeListener<TimeClock>() {
+                @Override
+                public void onChanged(Change<? extends TimeClock> change)
+                {
+                    while (change.next())
+                    {
+                        if (tableViewController!=null)
+                        {
+                            tableViewController.refresh((ObservableList<TimeClock>) change.getList());
+                        }
+                    }
+                }
+            });*/
+        Window primaryWindow = node.getScene().getWindow();
 
-            Window primaryWindow = node.getScene().getWindow();
+        tableViewStage.initOwner(primaryWindow);
 
-            tableViewStage.initOwner(primaryWindow);
+        tableViewStage.setX(primaryWindow.getX() + 200);
+        tableViewStage.setY(primaryWindow.getY() + 100);
 
-            tableViewStage.setX(primaryWindow.getX() + 200);
-            tableViewStage.setY(primaryWindow.getY() + 100);
-
-            tableViewStage.setResizable(false);
-
-            tableViewStage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
+        tableViewStage.setResizable(false);
+        if(timeClocks!=null) {
+            tableViewController.refresh(timeClocks);
         }
+        tableViewStage.show();
+
     }
 
 
@@ -292,14 +359,13 @@ public class MainController implements Initializable
 
     }
 
-
     private class RepeatTask extends TimerTask
     {
-        private ArrayList<TimeClock> timeClocks;
+        private ObservableList<TimeClock> timeClocks;
         private String cmd;
         private SSHHandler sshHandler = new SSHHandler();
 
-        public RepeatTask(ArrayList<TimeClock> timeClocks, String cmd)
+        public RepeatTask(ObservableList<TimeClock> timeClocks, String cmd)
         {
             this.timeClocks = timeClocks;
             this.cmd = cmd;
@@ -318,17 +384,15 @@ public class MainController implements Initializable
                 {
                     SimpleDateFormat formatter = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
                     String date = formatter.format(new Date(System.currentTimeMillis()));
-                    errorTextArea.appendText("["+ date +"] -- Could not connect to " + n.getHost()+"\n");
+                    errorTextArea.appendText("["+ date +"] -- Could not connect to " + n.getIpAddress()+"\n");
                 }catch (IOException | InterruptedException e)
                 {
                     e.printStackTrace();
                 }
             }));
         }
-
-
-
     }
+
     public void setMsgLabelText(String msg)
     {
         msgLabel.setText(msg);
@@ -349,7 +413,7 @@ public class MainController implements Initializable
     {
         SimpleDateFormat formatter = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
         String date = formatter.format(new Date(System.currentTimeMillis()));
-        errorTextArea.appendText("["+ date +"] --" + msg + "\n");
+        errorTextArea.appendText("["+ date +"] -- " + msg + "\n");
     }
 
     public void setSelectedIps(String ip)

@@ -27,15 +27,18 @@ import java.util.*;
 
 public class TableViewController implements Initializable
 {
-    @FXML TableColumn<TimeClockStringProperties, String> modelColumn, imageColumn, ipColumn, macColumn, kernelVersionColumn, uptimeColumn, dateColumn, rebootColumn;
+    @FXML TableColumn<TimeClock, String> modelColumn, imageColumn, ipColumn, macColumn, kernelVersionColumn, uptimeColumn, versionColumn, rebootColumn;
 
     @FXML
-    TableView<TimeClockStringProperties> clockInfoTable;
+    TableView<TimeClock> clockInfoTable;
+    ObservableList<TimeClockStringProperties> timeClockStrings = FXCollections.observableArrayList();
 
     @FXML
     ChoiceBox<String> selectIpByImageBox;
 
     private SSHHandler sshHandler = new SSHHandler();
+
+    private  Set<String> imageSet;
 
     MainController mainController = Context.getInstance().getMainController();
 
@@ -44,34 +47,34 @@ public class TableViewController implements Initializable
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
+        Context.getInstance().setTableViewController(this);
+        ObservableList<TimeClock> clocks = Context.getInstance().currentClocks();
 
-        ArrayList<TimeClock> clocks = Context.getInstance().currentClocks();
-        ObservableList<TimeClockStringProperties> timeClockStrings = FXCollections.observableArrayList();
 
         clockInfoTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         clockInfoTable.setEditable(true);
 
-        Set<String> imageSet = new HashSet<String>();
+        imageSet = new HashSet<String>();
 
-        modelColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("model"));
-        imageColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("image"));
-        ipColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("ipAddress"));
-        macColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("macAddress"));
-        kernelVersionColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("kernelVersion"));
-        uptimeColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("uptime"));
-        rebootColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("rebootCount"));
-        dateColumn.setCellValueFactory(new PropertyValueFactory<TimeClockStringProperties, String>("date"));
+        modelColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("model"));
+        imageColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("image"));
+        ipColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("ipAddress"));
+        macColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("macAddress"));
+        kernelVersionColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("kernelVersion"));
+        uptimeColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("uptime"));
+        rebootColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("rebootCount"));
+        versionColumn.setCellValueFactory(new PropertyValueFactory<TimeClock, String>("version"));
 
-        Callback<TableColumn<TimeClockStringProperties, String>,
-                TableCell<TimeClockStringProperties, String>> cellFactory
-                = (TableColumn<TimeClockStringProperties, String> p) -> new EditingCell();
+        Callback<TableColumn<TimeClock, String>,
+                TableCell<TimeClock, String>> cellFactory
+                = (TableColumn<TimeClock, String> p) -> new EditingCell();
         macColumn.setCellFactory(cellFactory);
 
-        macColumn.setOnEditCommit(new EventHandler<TableColumn.CellEditEvent<TimeClockStringProperties, String>>() {
+        macColumn.setOnEditCommit(new EventHandler<TableColumn.CellEditEvent<TimeClock, String>>() {
             @Override
-            public void handle(TableColumn.CellEditEvent<TimeClockStringProperties, String> cell) {
-                TimeClockStringProperties currentCellProperties = cell.getTableView().getItems().get(cell.getTablePosition().getRow());
+            public void handle(TableColumn.CellEditEvent<TimeClock, String> cell) {
+                TimeClock currentCellProperties = cell.getTableView().getItems().get(cell.getTablePosition().getRow());
 
                 if (!cell.getNewValue().trim().equals(cell.getOldValue().trim()))
                 {
@@ -87,7 +90,7 @@ public class TableViewController implements Initializable
                         Optional<ButtonType> res = alert.showAndWait();
                         if (res.get() == ButtonType.OK) {
                             TimeClock clock = new TimeClock();
-                            clock.setHost(currentCellProperties.getIpAddress());
+                            clock.setIpAddress(currentCellProperties.getIpAddress());
 
                             logger.info("Changing MAC to " + cell.getNewValue());
                             sshHandler.sendCmd("echo " + cell.getNewValue() + " > /etc/mac.txt ; reboot", clock);
@@ -123,28 +126,13 @@ public class TableViewController implements Initializable
             return firstDate.compareTo(secondDate);
         });
 
+        clocks.forEach(n->{imageSet.add(n.getImage());});
+
+        clockInfoTable.setItems(clocks);
 
 
-        clocks.forEach((n -> {
-            if(n.canConnect())
-            {
-                timeClockStrings.add(new TimeClockStringProperties(
-                        n.getModel(),
-                        n.getImage(),
-                        n.getHost(),
-                        n.getMac(),
-                        n.getKernelVersion(),
-                        n.getUptime(),
-                        n.getRebootCount(),
-                        n.getDate()
-                ));
-                imageSet.add(n.getImage());
-            }
-        }));
-
-       
-        clockInfoTable.setItems(timeClockStrings);
         imageSet.forEach((image ->{
+            logger.info("adding " + image);
             selectIpByImageBox.getItems().add(image);
         }));
     }
@@ -156,7 +144,7 @@ public class TableViewController implements Initializable
         {
             mainController.ipTextArea.clear();
             String image = selectIpByImageBox.getValue();
-            ObservableList<TimeClockStringProperties> itemsByImage = clockInfoTable.getItems();
+            ObservableList<TimeClock> itemsByImage = clockInfoTable.getItems();
             itemsByImage.forEach((clock -> {
                 if (clock.getImage().equals(image))
                 mainController.setSelectedIps(clock.getIpAddress().split("\\.")[3]);
@@ -168,9 +156,49 @@ public class TableViewController implements Initializable
     private void selectIPs(ActionEvent event)
     {
         mainController.ipTextArea.clear();
-        ObservableList<TimeClockStringProperties> selectedItems = clockInfoTable.getSelectionModel().getSelectedItems();
+        ObservableList<TimeClock> selectedItems = clockInfoTable.getSelectionModel().getSelectedItems();
         selectedItems.forEach((n->{
             mainController.setSelectedIps(n.getIpAddress().split("\\.")[3]);
         }));
+    }
+
+    public void refresh( ObservableList<TimeClock> clocks )
+    {
+
+        clockInfoTable.setItems(clocks);
+        if(clocks!=null)
+        {
+        clocks.forEach(clock->{
+            if (clock.getImage()!=null && !clock.getImage().equals(""))
+            imageSet.add(clock.getImage());
+        });
+        }
+        imageSet.forEach((image ->{
+            selectIpByImageBox.getItems().add(image);
+        }));
+        clockInfoTable.setVisible(false);
+        clockInfoTable.setVisible(true);
+        clockInfoTable.getColumns().forEach(n->{
+            n.setVisible(false);
+            n.setVisible(true);
+        });
+    }
+
+    @FXML private void buttonRefresh(ActionEvent event)
+    {
+        selectIpByImageBox.getItems().clear();
+        Context.getInstance().currentClocks().forEach(clock->{
+            if (clock.getImage()!=null && !clock.getImage().equals(""))
+                imageSet.add(clock.getImage());
+        });
+        imageSet.forEach((image ->{
+            selectIpByImageBox.getItems().add(image);
+        }));
+        clockInfoTable.setVisible(false);
+        clockInfoTable.setVisible(true);
+        clockInfoTable.getColumns().forEach(n->{
+            n.setVisible(false);
+            n.setVisible(true);
+        });
     }
 }

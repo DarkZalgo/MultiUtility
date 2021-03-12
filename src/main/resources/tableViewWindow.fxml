@@ -9,16 +9,17 @@
         <columns>
           <TableColumn fx:id="modelColumn" prefWidth="113.0" style="-fx-alignment: CENTER;" text="Model" />
           <TableColumn fx:id="imageColumn" prefWidth="111.0" style="-fx-alignment: CENTER;" text="Image" />
+            <TableColumn fx:id="versionColumn" minWidth="1.0" prefWidth="91.0" style="-fx-alignment: CENTER;" text="Version" />
             <TableColumn fx:id="ipColumn" prefWidth="109.0" style="-fx-alignment: CENTER;" text="IP" />
             <TableColumn fx:id="macColumn" prefWidth="136.0" style="-fx-alignment: CENTER;" text="MAC" />
             <TableColumn fx:id="kernelVersionColumn" prefWidth="117.0" style="-fx-alignment: CENTER;" text="Kernel Version" />
             <TableColumn fx:id="uptimeColumn" prefWidth="165.0" style="-fx-alignment: CENTER;" text="Uptime" />
             <TableColumn fx:id="rebootColumn" prefWidth="67.0" style="-fx-alignment: CENTER;" text="Reboots" />
-            <TableColumn fx:id="dateColumn" minWidth="1.0" prefWidth="91.0" style="-fx-alignment: CENTER;" text="Date" />
         </columns>
       </TableView>
       <Button layoutX="14.0" layoutY="332.0" mnemonicParsing="false" onAction="#selectIPs" text="Select IPs" />
       <ChoiceBox fx:id="selectIpByImageBox" layoutX="125.0" layoutY="332.0" prefWidth="150.0" />
       <Button layoutX="130.0" layoutY="363.0" mnemonicParsing="false" onAction="#selectIPsByImage" text="Select IP By Image" />
+      <Button layoutX="319.0" layoutY="332.0" mnemonicParsing="false" onAction="#buttonRefresh" text="Refresh" />
    </children>
 </Pane>

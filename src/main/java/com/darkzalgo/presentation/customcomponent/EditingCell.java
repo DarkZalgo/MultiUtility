@@ -1,5 +1,6 @@
 package com.darkzalgo.presentation.customcomponent;
 
+import com.darkzalgo.model.TimeClock;
 import com.darkzalgo.model.TimeClockStringProperties;
 import com.darkzalgo.utility.SSHHandler;
 import javafx.beans.value.ChangeListener;
@@ -13,7 +14,7 @@ import javafx.scene.input.KeyEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EditingCell extends TableCell<TimeClockStringProperties, String> {
+public class EditingCell extends TableCell<TimeClock, String> {
     private TextField textField;
     private static final Logger logger = LoggerFactory.getLogger(EditingCell.class);
 
