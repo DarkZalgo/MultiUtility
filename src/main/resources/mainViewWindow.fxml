@@ -25,10 +25,10 @@
       <RadioButton fx:id="removeGtFilesRadio" layoutX="18.0" layoutY="409.0" mnemonicParsing="false" text="Remove GT Files" />
       <RadioButton fx:id="rebootRadio" layoutX="18.0" layoutY="431.0" mnemonicParsing="false" text="Reboot" />
       <CheckBox fx:id="repeatCmdBox" layoutX="347.0" layoutY="435.0" mnemonicParsing="false" text="Repeat Command" />
-      <RadioButton fx:id="getInfoRadio" layoutX="18.0" layoutY="451.0" mnemonicParsing="false" text="Get Info" />
       <TextArea fx:id="commandTextArea" layoutX="338.0" layoutY="286.0" prefHeight="147.0" prefWidth="166.0" />
       <Button layoutX="566.0" layoutY="432.0" mnemonicParsing="false" onAction="#darkMode" text="Dark Mode" />
       <ChoiceBox fx:id="subnetChoiceBox" layoutX="51.0" layoutY="273.0" prefHeight="26.0" prefWidth="101.0" />
       <Label fx:id="msgLabel" layoutX="347.0" layoutY="225.0" />
+      <CheckBox fx:id="getInfoBox" layoutX="18.0" layoutY="455.0" mnemonicParsing="false" text="Get Info" />
    </children>
 </Pane>

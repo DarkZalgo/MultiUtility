@@ -38,11 +38,11 @@ public class MainController implements Initializable
 {
     @FXML TextArea ipTextArea, errorTextArea, commandTextArea;
 
-    @FXML CheckBox repeatCmdBox;
+    @FXML CheckBox repeatCmdBox, getInfoBox;
 
     @FXML ChoiceBox subnetChoiceBox;
 
-    @FXML RadioButton removeGtFilesRadio, rebootRadio, getInfoRadio;
+    @FXML RadioButton removeGtFilesRadio, rebootRadio;
 
     @FXML TextField timerLengthField;
 
@@ -66,9 +66,9 @@ public class MainController implements Initializable
 
     private ObservableList<TimeClock> timeClocks;
 
-    private Parent tableViewRoot;
+    private Parent tableViewRoot, sftpViewRoot;
 
-    private Scene tableViewScene;
+    private Scene tableViewScene, sftpViewScene;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
@@ -82,11 +82,13 @@ public class MainController implements Initializable
         logger.info(START_WIDTH_ERROR_TEXT + " asdf");*/
         removeGtFilesRadio.setToggleGroup(cmdPresetGroup);
         rebootRadio.setToggleGroup(cmdPresetGroup);
-        getInfoRadio.setToggleGroup(cmdPresetGroup);
+        getInfoBox.setSelected(true);
 
         try {
             tableViewRoot = new FXMLLoader(getClass().getResource("/tableViewWindow.fxml")).load();
             tableViewScene = new Scene(tableViewRoot, 930, 400);
+            sftpViewRoot = new FXMLLoader(getClass().getResource("/sftpViewWindow.fxml")).load();
+            sftpViewScene = new Scene(sftpViewRoot, 600,400);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -123,10 +125,6 @@ public class MainController implements Initializable
                 else if (cmdPresetGroup.getSelectedToggle() == rebootRadio)
                 {
                     commandTextArea.setText("reboot");
-                }
-                else if (cmdPresetGroup.getSelectedToggle() == getInfoRadio)
-                {
-                    commandTextArea.setText("");
                 }
             }
         });
@@ -204,9 +202,6 @@ public class MainController implements Initializable
         TimeClock tempClock;
         timeClocks = Context.getInstance().currentClocks();
 
-        timeClocks = FXCollections.observableArrayList();
-
-
         timeClocks.clear();
 
         if (!(ipTextArea.getText().split(",").length > 0))
@@ -239,25 +234,20 @@ public class MainController implements Initializable
             }
         }
 
-        logger.info("Timeclocks Length " + timeClocks.size());
-        timeClocks.forEach((n-> {
-            try
-            {
-                sshHandler.getClockInfo(n);
-                if(n.flaggedForRemoval())
-                {
-                    logger.info("\n\n\nREMOVING " + n.getIpAddress());
-                    timeClocks.remove(timeClocks.indexOf(n));
+        if(getInfoBox.isSelected())
+        {
+            timeClocks.forEach((clock -> {
+                try {
+                    sshHandler.getClockInfo(clock);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (JSchException | InterruptedException e) {
+                    logger.warn("Could not connect to " + clock.getUsername() + "@" + clock.getIpAddress() + ":" + clock.getPort() + " using password " + clock.getPassword());
+                    appendErrorTextArea("Could not connect to " + clock.getUsername() + "@" + clock.getIpAddress() + ":" + clock.getPort() + " using password " + clock.getPassword() + "\n");
                 }
-            } catch (IOException e )
-            {
-                e.printStackTrace();
-            }catch (JSchException | InterruptedException e )
-            {
-                logger.warn("Could not connect to " + n.getUsername() + "@" + n.getIpAddress() + ":" + n.getPort() +" using password " + n.getPassword());
-                appendErrorTextArea("Could not connect to " + n.getUsername() + "@" + n.getIpAddress() + ":" + n.getPort() +" using password " + n.getPassword() + "\n");
-            }
-        }));
+            }));
+        }
 
         if(repeatCmdBox.isSelected() && !cmd.equals(""))
         {
@@ -282,8 +272,6 @@ public class MainController implements Initializable
                 }));
 
         }
-        Context.getInstance().setClocks(timeClocks);
-
     }
 
     @FXML
@@ -337,6 +325,31 @@ public class MainController implements Initializable
             tableViewController.refresh(timeClocks);
         }
         tableViewStage.show();
+
+    }
+
+    @FXML
+    private void openSftpView(ActionEvent event)
+    {
+        Node node = (Node) event.getSource();
+
+        Stage sftpViewStage = new Stage();
+
+        sftpViewRoot.setStyle(node.getScene().getRoot().getStyle());
+        sftpViewStage.setTitle("SFTP");
+        sftpViewStage.setScene(sftpViewScene);
+        sftpViewStage.initModality(Modality.WINDOW_MODAL);
+
+        Window primaryWindow = node.getScene().getWindow();
+
+        sftpViewStage.initOwner(primaryWindow);
+
+        sftpViewStage.setX(primaryWindow.getX() + 200);
+        sftpViewStage.setY(primaryWindow.getY() + 100);
+
+        sftpViewStage.setResizable(false);
+
+        sftpViewStage.show();
 
     }
 

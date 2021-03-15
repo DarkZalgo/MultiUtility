@@ -12,7 +12,7 @@ public class MainApp extends Application
     @Override
     public void start(Stage primaryStage) throws Exception
     {
-        Parent root = FXMLLoader.load(getClass().getResource("/rebootWindow.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/mainViewWindow.fxml"));
         primaryStage.setTitle("Multi Utility 21-03-03");
         primaryStage.setScene(new Scene(root, 700, 500));
         primaryStage.show();

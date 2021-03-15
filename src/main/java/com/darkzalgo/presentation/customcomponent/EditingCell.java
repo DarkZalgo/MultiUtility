@@ -1,12 +1,7 @@
 package com.darkzalgo.presentation.customcomponent;
 
 import com.darkzalgo.model.TimeClock;
-import com.darkzalgo.model.TimeClockStringProperties;
-import com.darkzalgo.utility.SSHHandler;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
-import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;

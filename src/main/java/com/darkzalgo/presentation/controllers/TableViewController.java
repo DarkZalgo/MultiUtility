@@ -2,7 +2,6 @@ package com.darkzalgo.presentation.controllers;
 
 import com.darkzalgo.presentation.customcomponent.EditingCell;
 import com.darkzalgo.model.TimeClock;
-import com.darkzalgo.model.TimeClockStringProperties;
 import com.darkzalgo.presentation.gui.Context;
 import com.darkzalgo.utility.SSHHandler;
 import com.jcraft.jsch.JSchException;
@@ -31,7 +30,6 @@ public class TableViewController implements Initializable
 
     @FXML
     TableView<TimeClock> clockInfoTable;
-    ObservableList<TimeClockStringProperties> timeClockStrings = FXCollections.observableArrayList();
 
     @FXML
     ChoiceBox<String> selectIpByImageBox;
@@ -49,7 +47,6 @@ public class TableViewController implements Initializable
     {
         Context.getInstance().setTableViewController(this);
         ObservableList<TimeClock> clocks = Context.getInstance().currentClocks();
-
 
         clockInfoTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -126,15 +123,7 @@ public class TableViewController implements Initializable
             return firstDate.compareTo(secondDate);
         });
 
-        clocks.forEach(n->{imageSet.add(n.getImage());});
-
         clockInfoTable.setItems(clocks);
-
-
-        imageSet.forEach((image ->{
-            logger.info("adding " + image);
-            selectIpByImageBox.getItems().add(image);
-        }));
     }
 
     @FXML
@@ -200,5 +189,18 @@ public class TableViewController implements Initializable
             n.setVisible(false);
             n.setVisible(true);
         });
+    }
+
+    public void addToImageSet(String image)
+    {
+        int size = imageSet.size();
+        imageSet.add(image);
+        if (imageSet.size() > size)
+        {
+            selectIpByImageBox.getItems().clear();
+            imageSet.forEach(n->{
+                selectIpByImageBox.getItems().add(n);
+            });
+        }
     }
 }

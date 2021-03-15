@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
+import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,13 +27,15 @@ public class SSHHandler
     private static final Logger logger = LoggerFactory.getLogger(SSHHandler.class);
     static final int cores = Runtime.getRuntime().availableProcessors();
 
-    private JSch jsch = new JSch();
+    //private JSch jsch = new JSch();
 
     private List<String> multiIpList = new ArrayList<>();
 
     private int[] portsToCheck = {22,3735};
 
     private static MainController controller;
+
+    private ExecutorService cmdThreadPool = Executors.newFixedThreadPool((int) (cores*1.5));
 
 
 
@@ -61,16 +64,15 @@ public class SSHHandler
         logger.info("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
         setMainLabel("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
         try {
-            session = jsch.getSession(user, host, port);
+            session = new JSch().getSession(user, host, port);
             session.setPassword(password);
             session.setConfig("StrictHostKeyChecking", "no");
             session.setConfig("PreferredAuthentications", "password");
-            session.setConfig("MaxAuthTries", "1");
+            session.setConfig("MaxAuthTries", "3");
 
-            synchronized (this)
-            {
+
                 session.connect(5000);
-            }
+
 
             logger.info("Successfully connected to " + user + "@" + host + ":" + port);
             setMainLabel("Successfully connected to " + user + "@" + host + ":" + port);
@@ -81,8 +83,6 @@ public class SSHHandler
             SimpleDateFormat formatter = new SimpleDateFormat("MM-dd-yyyy hh:mm:ss");
             String date = formatter.format(new Date(System.currentTimeMillis()));
             appendMainErrorArea("[" + date + "] --  " + e.getLocalizedMessage()+ " at " + timeClock.getIpAddress());
-            /*logger.info("Could not connect to " + user + "@" + host + ":" + port);
-            sendLabel("Could not connect to " + user + "@" + host + ":" + port);*/
             String error = e.getLocalizedMessage();
             logger.info(error);
             if (error.toLowerCase().contains("auth"))
@@ -90,7 +90,14 @@ public class SSHHandler
                 setMainLabel("Authorization Failure at " + timeClock.getIpAddress());
                 timeClock.setRemoveFlag(true);
                 timeClock.setCanConnect(false);
-                Context.getInstance().currentClocks().remove(Context.getInstance().currentClocks().indexOf(timeClock));
+                Context.getInstance().currentClocks().remove(timeClock);
+            }
+            if (error.toLowerCase().contains("timeout"))
+            {
+                setMainLabel("Socket Timeout Failure " + timeClock.getIpAddress());
+                timeClock.setRemoveFlag(true);
+                timeClock.setCanConnect(false);
+                Context.getInstance().currentClocks().remove(timeClock);
             }
         }
         return session;
@@ -124,115 +131,23 @@ public class SSHHandler
         }
     }
 
-    private void sendMultiCmd(TimeClock timeClock, String[] cmds) {
-        Task task = new Task<String[]>()
-        {
-
-            @Override
-            public String[] call() throws Exception
-            {
-
-            int port = timeClock.getPort();
-            String user = timeClock.getUsername();
-            String host = timeClock.getIpAddress();
-            String[] cmdOutput = new String[cmds.length];
-            StringBuilder cmdOutputBuilder;
-            Session session = connect(timeClock);
-
-            for (int i = 0; i < cmds.length; i++) {
-                Channel channel = session.openChannel("exec");
-                cmdOutputBuilder = new StringBuilder();
-
-                ((ChannelExec) channel).setCommand(cmds[i]);
-
-                InputStream cmdStream = channel.getInputStream();
-                setMainLabel("Sending command \n" + cmds[i] + " \nto " + user + "@" + host + ":" + port);
-                logger.info("Sending command \n" + cmds[i] + " \nto " + user + "@" + host + ":" + port);
-                channel.connect();
-
-
-                int readByte = cmdStream.read();
-
-                while (readByte != 0xffffffff)
-                {
-                    cmdOutputBuilder.append((char) readByte);
-                    readByte = cmdStream.read();
-                }
-
-                channel.disconnect();
-                cmdOutput[i] = cmdOutputBuilder.toString();
-            }
-
-            setMainLabel("Done sending commands to " + user + "@" + host + ":" + port);
-            disconnect(session);
-            setMainLabel("Disconnected from " + user + "@" + host + ":" + port);
-            return cmdOutput;
-            }
-        };
-
-        task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, new EventHandler<WorkerStateEvent>()
-        {
-            @Override
-            public void handle(WorkerStateEvent workerStateEvent)
-            {
-                setClockInfo(timeClock, (String[])task.getValue());
-            }
-        });
-        new Thread(task).start();
+    private void sendMultiCmd(TimeClock timeClock, String[] cmds)
+    {
+        MultiCommandHandlerThread multiCommandTask = new MultiCommandHandlerThread(timeClock, cmds);
+        cmdThreadPool.submit(multiCommandTask);
     }
 
-    public void sendCmd(String cmd, TimeClock timeClock) throws JSchException, IOException, InterruptedException {
-        Task task = new Task<String>()
-        {
-            @Override
-            public String call() throws Exception
-            {
-                int port = timeClock.getPort();
-                String user = timeClock.getUsername();
-                String host = timeClock.getIpAddress();
-
-                Session session = connect(timeClock);
-                Channel channel = session.openChannel("exec");
-
-                StringBuilder cmdOutput = new StringBuilder();
-
-                ((ChannelExec) channel).setCommand(cmd);
-
-                InputStream cmdStream = channel.getInputStream();
-                setMainLabel("Sending command \n" + cmd + " \nto " + user + "@" + host + ":" + port);
-                logger.info("Sending command \n" + cmd + " \nto " + user + "@" + host + ":" + port);
-                channel.connect();
-
-                int readByte = cmdStream.read();
-
-                while (readByte != 0xffffffff)
-                {
-                    cmdOutput.append((char) readByte);
-                    readByte = cmdStream.read();
-                }
-                channel.disconnect();
-                disconnect(session);
-                return cmdOutput.toString();
-                }
-        };
-        task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, new EventHandler<WorkerStateEvent>() {
-            @Override
-            public void handle(WorkerStateEvent workerStateEvent)
-            {
-                String output = (String) task.getValue();
-                if (!output.equals(""))
-                logger.info("Clock returned " + output);
-            }
-        });
-       Thread taskThread = new Thread(task);
-       taskThread.start();
+    public void sendCmd(String cmd, TimeClock timeClock) throws JSchException, IOException, InterruptedException
+    {
+        SingleCommandHandlerThread singleCommandTask = new SingleCommandHandlerThread(timeClock,cmd);
+        cmdThreadPool.submit(singleCommandTask);
 
     }
 
     public void getClockInfo(TimeClock timeClock) throws IOException, JSchException, InterruptedException {
         String[] cmds = {
                 "ls /etc/init.d|grep synergy",
-                "cat /etc/mac.txt",
+                "mac=$(cat /etc/mac.txt); if [ -n \"$mac\" ] ; then echo $mac; else ifconfig|grep HWaddr|awk -F\"HWaddr \" '{print $2}';fi",
                 "version",
                 "uname -a|grep -o \"[A-Z][a-z][a-z] [0-9]\\(.*\\)[0-9][0-9][0-9][0-9]\" | sed 's/[0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\} [A-Z]\\{3\\} //g'",
                 "cat /proc/uptime | awk \'{print $1}\'",
@@ -240,7 +155,8 @@ public class SSHHandler
                 "ls /home/admin",
                 "ls /Arm/Synergy",
                 "grep url /home/admin/wbcs/conf/settings.conf",
-                "grep ^SWV /home/admin/synergy/conf/sysconfig.properties|awk -F= '{print $2}'|awk -F. '{print $3}'"
+                "grep ^SWV /home/admin/synergy/conf/sysconfig.properties|awk -F= '{print $2}'|awk -F. '{print $3}'",
+                "grep 'Version' /Arm/Synergy/AppProperties.xml|awk -F'- ' '{print $2}'|awk -F\\< '{print $1}'"
         };
         sendMultiCmd(timeClock, cmds);
     }
@@ -327,6 +243,11 @@ public class SSHHandler
         if (clockInfo[7].toLowerCase().contains("tress"))
             image = "Grupo";
 
+        if(clockInfo[10].contains("3."))
+        {
+            timeClock.setVersion(clockInfo[10]);
+        }
+
         timeClock.setMacAddress(!clockInfo[1].equals("") ? clockInfo[1] : "Default");
         timeClock.setModel(clockInfo[0].contains("X") ? "SYnergy/A20" : "SYnergy/A 2416");
         timeClock.setImage(image);
@@ -336,64 +257,43 @@ public class SSHHandler
         timeClock.setRebootCount(clockInfo[5]);
         timeClock.setCanConnect(true);
         timeClock.setRemoveFlag(false);
+        Context.getInstance().getTableViewController().addToImageSet(image);
     }
 
-    public void checkAllHosts(String subnet) throws IOException, InterruptedException, ExecutionException {
+    public void checkAllHosts(String subnet) throws IOException, InterruptedException, ExecutionException
+    {
 
-        final List<String> resultIpList = new ArrayList<>();
-
-        Task task = new Task<List<String>>() {
-            @Override
-            public List<String> call() throws Exception
-            {
+        List<String> resultIpList = new ArrayList<>();
                 List<String> ipArray = new ArrayList<>();
-                for (
-                        int i = 1;
-                        i < 255; i++) {
-                    logger.info("Adding " + subnet + i + " to ipArray");
+                for (int i = 1; i < 255; i++)
+                {
                     ipArray.add(subnet + i);
                 }
 
-                ipArray.parallelStream().forEach((ip -> {
-                            for (int port : portsToCheck)
-                            {
-                                try {
-                                    setMainLabel("Checking ip " + ip + " for connectivity...");
+        ipArray.parallelStream().forEach(ip -> {
+            for (int port : portsToCheck)
+            {
+                try {
+                    setMainLabel("Checking ip " + ip + " for connectivity...");
+                    if (!resultIpList.contains(ip))
+                    {
+                        logger.info("Testing " + ip + ":" + port + " for connectivity...");
+                        Socket socket = new Socket();
+                        socket.connect(new InetSocketAddress(ip, port), 75);
+                        logger.info("Port " + port + " is open on ip " + ip);
+                        setMainLabel("Port " + port + " is open on ip " + ip+ "!");
+                        resultIpList.add(ip);
+                    }
 
-                                    if (!resultIpList.contains(ip)) {
-                                        logger.info("Testing " + ip + ":" + port + " for connectivity...");
-                                        Socket socket = new Socket();
-                                        socket.connect(new InetSocketAddress(ip, port), 75);
-                                        logger.info("Port " + port + " is open on ip " + ip);
-                                        setMainLabel("Port " + port + " is open on ip " + ip+ "!");
-                                        if (port == 8080) {
-                                            logger.info("Host " + ip + " is up but SSH is not on.");
-
-                                        } else resultIpList.add(ip);
-                                    }
-
-                                } catch (IOException e) {
-                                    logger.info(e.getLocalizedMessage() + " for ip " + ip + ":" + port);
-                                    appendMainErrorArea(ip + ":" + port + " is not up or SSH is not turned on");
-                                }
-                            }
-                        }));
-                setMainLabel("Found " + resultIpList.size() + " IP Addresses");
-            return resultIpList;
-        }
-        };
-
-       task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, new EventHandler<WorkerStateEvent>() {
-           @Override
-           public void handle(WorkerStateEvent workerStateEvent)
-           {
-               List<String> res = (List<String>) task.getValue();
-               controller.setIpTextAreaIPs(res);
-           }
-       });
-       new Thread(task).start();
+                } catch (IOException e) {
+                    logger.info(e.getLocalizedMessage() + " for ip " + ip + ":" + port);
+                    appendMainErrorArea(ip + ":" + port + " is not up or SSH is not turned on");
+                }
+            }
+        });
+        setMainLabel("Found " + resultIpList.size() + " IP Addresses");
+        controller.setIpTextAreaIPs(resultIpList);
     }
-
 
     public String checkHost(String ip)
     {
@@ -406,22 +306,165 @@ public class SSHHandler
                     socket.connect(new InetSocketAddress(ip, port), 75);
                     logger.info("Port " + port + " is open on ip " + ip);
                     ipOpenPort = ip + "," + port;
-                } catch (IOException e) {logger.info(e.getLocalizedMessage() + " for ip " + ip + "and port " + port);}
+                } catch (IOException e) {logger.info(e.getLocalizedMessage() + " for " + ip + ":" + port);}
             }
 
         return ipOpenPort;
     }
 
-    public void sendThroughSFTP()
+    public void sendThroughSFTP(TimeClock clock, String args[])
     {
-        Task task = new Task<Void>()
+        SFTPHandlerThread sftpTask = new SFTPHandlerThread(clock, args);
+        cmdThreadPool.submit(sftpTask);
+    }
+
+    private class SingleCommandHandlerThread extends Task<String>
+    {
+        private TimeClock clock;
+        private String cmd = "";
+        public SingleCommandHandlerThread(TimeClock clock, String cmd)
         {
-            @Override
-            public Void call() throws Exception
+            this.clock = clock;
+            this.cmd = cmd;
+            this.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, new EventHandler<WorkerStateEvent>() {
+                @Override
+                public void handle(WorkerStateEvent workerStateEvent)
+                {
+                    String output = SingleCommandHandlerThread.this.getValue();
+                    if (!output.equals(""))
+                        logger.info("Clock returned " + output);
+                }
+            });
+        }
+        @Override
+        public String call() throws Exception
+        {
+            int port = clock.getPort();
+            String user = clock.getUsername();
+            String host = clock.getIpAddress();
+
+            Session session = connect(clock);
+            Channel channel = session.openChannel("exec");
+
+            StringBuilder cmdOutput = new StringBuilder();
+
+            ((ChannelExec) channel).setCommand(cmd);
+
+            InputStream cmdStream = channel.getInputStream();
+            setMainLabel("Sending command \n" + cmd + " \nto " + user + "@" + host + ":" + port);
+            logger.info("Sending command \n" + cmd + " \nto " + user + "@" + host + ":" + port);
+            channel.connect();
+
+            int readByte = cmdStream.read();
+
+            while (readByte != 0xffffffff)
             {
-                return null;
+                cmdOutput.append((char) readByte);
+                readByte = cmdStream.read();
             }
-        };
+            channel.disconnect();
+            disconnect(session);
+            return cmdOutput.toString();
+        }
+
+    }
+
+    private class MultiCommandHandlerThread extends Task<String[]>
+    {
+        String[] cmds = {""};
+        TimeClock clock;
+        public MultiCommandHandlerThread(TimeClock clock, String[] cmds)
+        {
+            this.cmds = cmds;
+            this.clock = clock;
+            this.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, new EventHandler<WorkerStateEvent>()
+            {
+                @Override
+                public void handle(WorkerStateEvent workerStateEvent)
+                {
+                    setClockInfo(clock, (MultiCommandHandlerThread.this.getValue()));
+                }
+            });
+        }
+        @Override
+        public String[] call() throws Exception
+        {
+            int port = clock.getPort();
+            String user = clock.getUsername();
+            String host = clock.getIpAddress();
+            String[] cmdOutput = new String[cmds.length];
+            StringBuilder cmdOutputBuilder;
+            Session session = connect(clock);
+
+            for (int i = 0; i < cmds.length; i++) {
+                Channel channel = session.openChannel("exec");
+                cmdOutputBuilder = new StringBuilder();
+
+                ((ChannelExec) channel).setCommand(cmds[i]);
+
+                InputStream cmdStream = channel.getInputStream();
+                setMainLabel("Sending command \n" + cmds[i] + " \nto " + user + "@" + host + ":" + port);
+                logger.info("Sending command \n" + cmds[i] + " \nto " + user + "@" + host + ":" + port);
+                channel.connect();
+
+
+                int readByte = cmdStream.read();
+
+                while (readByte != 0xffffffff)
+                {
+                    cmdOutputBuilder.append((char) readByte);
+                    readByte = cmdStream.read();
+                }
+
+                channel.disconnect();
+                cmdOutput[i] = cmdOutputBuilder.toString();
+            }
+
+            setMainLabel("Done sending commands to " + user + "@" + host + ":" + port);
+            disconnect(session);
+            setMainLabel("Disconnected from " + user + "@" + host + ":" + port);
+            return cmdOutput;
+        }
+    }
+
+    private class SFTPHandlerThread extends Task<Void>
+    {
+        private TimeClock clock;
+        private String[] args;
+        private final int SFTP_CMD = 0;
+        private final int LOCAL = 1;
+        private final int REMOTE = 2;
+
+        public SFTPHandlerThread(TimeClock clock, String[] args)
+        {
+            this.clock = clock;
+            this.args = args;
+        }
+
+        @Override
+        protected Void call() throws Exception
+        {
+            Session session = connect(clock);
+            Channel channel = session.openChannel("sftp");
+            ChannelSftp secureChannel = (ChannelSftp) channel;
+            secureChannel.connect();
+
+            switch(args[SFTP_CMD])
+            {
+                case "get":
+                    secureChannel.get(args[REMOTE], args[LOCAL], null, ChannelSftp.OVERWRITE);
+                    break;
+                case "put":
+                    secureChannel.put(args[LOCAL], args[REMOTE], null, ChannelSftp.OVERWRITE);
+                    break;
+                default:
+                    break;
+            }
+
+            secureChannel.disconnect();
+            disconnect(session);
+            return null;
+        }
     }
 
 }
