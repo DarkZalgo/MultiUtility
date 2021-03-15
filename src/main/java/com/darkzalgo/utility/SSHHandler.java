@@ -248,7 +248,7 @@ public class SSHHandler
             timeClock.setVersion(clockInfo[10]);
         }
 
-        timeClock.setMacAddress(!clockInfo[1].equals("") ? clockInfo[1] : "Default");
+        timeClock.setMacAddress(!clockInfo[1].equals("") ? clockInfo[1].trim() : "Default");
         timeClock.setModel(clockInfo[0].contains("X") ? "SYnergy/A20" : "SYnergy/A 2416");
         timeClock.setImage(image);
 

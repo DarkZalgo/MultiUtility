@@ -120,7 +120,7 @@ public class MainController implements Initializable
             {
                 if (cmdPresetGroup.getSelectedToggle() == removeGtFilesRadio)
                 {
-                    commandTextArea.setText("rm /Arm/Synergy/SY\nrm /Arm/Synergy/SYTransactions");
+                    commandTextArea.setText("rm /Arm/Synergy/SY\nrm /Arm/Synergy/SYTransactions\nfbv /root/synergyX/SynelAmericas_320x240.jpg");
                 }
                 else if (cmdPresetGroup.getSelectedToggle() == rebootRadio)
                 {
