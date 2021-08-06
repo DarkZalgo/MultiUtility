@@ -3,7 +3,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="930.0" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.darkzalgo.presentation.controllers.TableViewController">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="930.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.darkzalgo.presentation.controllers.TableViewController">
    <children>
       <TableView fx:id="clockInfoTable" layoutX="10.0" layoutY="10.0" prefHeight="300.0" prefWidth="910.0">
         <columns>
@@ -20,6 +20,6 @@
       <Button layoutX="14.0" layoutY="332.0" mnemonicParsing="false" onAction="#selectIPs" text="Select IPs" />
       <ChoiceBox fx:id="selectIpByImageBox" layoutX="125.0" layoutY="332.0" prefWidth="150.0" />
       <Button layoutX="130.0" layoutY="363.0" mnemonicParsing="false" onAction="#selectIPsByImage" text="Select IP By Image" />
-      <Button layoutX="319.0" layoutY="332.0" mnemonicParsing="false" onAction="#buttonRefresh" text="Refresh" />
+      <Button fx:id="refreshBtn" layoutX="319.0" layoutY="332.0" mnemonicParsing="false" onAction="#buttonRefresh" text="Refresh" />
    </children>
 </Pane>

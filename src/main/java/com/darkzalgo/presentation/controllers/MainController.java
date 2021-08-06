@@ -43,8 +43,9 @@ public class MainController implements Initializable
     @FXML ChoiceBox subnetChoiceBox;
 
     @FXML RadioButton removeGtFilesRadio, rebootRadio;
+    @FXML RadioButton readerNamePwdRadio, macAddrPwdRadio, neitherPwdRadio;
 
-    @FXML TextField timerLengthField;
+    @FXML TextField timerLengthField, passwordField;
 
     @FXML Button sendCmdBtn, cancelTimerBtn;
 
@@ -52,7 +53,10 @@ public class MainController implements Initializable
 
     @FXML Pane rebootWindowPane;
 
+    Set<RadioButton> passwordRadioSet;
+
     ToggleGroup cmdPresetGroup = new ToggleGroup();
+    ToggleGroup passwordRadioGroup = new ToggleGroup();
 
     private boolean darkLight;
 
@@ -66,9 +70,9 @@ public class MainController implements Initializable
 
     private ObservableList<TimeClock> timeClocks;
 
-    private Parent tableViewRoot, sftpViewRoot;
+    private Parent tableViewRoot, sftpViewRoot, configUtilViewRoot, stressTestViewRoot;
 
-    private Scene tableViewScene, sftpViewScene;
+    private Scene tableViewScene, sftpViewScene, configUtilViewScene, stressTestViewScene;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
@@ -82,13 +86,33 @@ public class MainController implements Initializable
         logger.info(START_WIDTH_ERROR_TEXT + " asdf");*/
         removeGtFilesRadio.setToggleGroup(cmdPresetGroup);
         rebootRadio.setToggleGroup(cmdPresetGroup);
+        macAddrPwdRadio.setToggleGroup(passwordRadioGroup);
+        readerNamePwdRadio.setToggleGroup(passwordRadioGroup);
+        neitherPwdRadio.setToggleGroup(passwordRadioGroup);
         getInfoBox.setSelected(true);
 
         try {
             tableViewRoot = new FXMLLoader(getClass().getResource("/tableViewWindow.fxml")).load();
             tableViewScene = new Scene(tableViewRoot, 930, 400);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
             sftpViewRoot = new FXMLLoader(getClass().getResource("/sftpViewWindow.fxml")).load();
             sftpViewScene = new Scene(sftpViewRoot, 600,400);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            configUtilViewRoot = new FXMLLoader(getClass().getResource("/configUtilViewWindow.fxml")).load();
+            configUtilViewScene = new Scene(configUtilViewRoot, 800,950);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            stressTestViewRoot = new FXMLLoader(getClass().getResource("/stressTestViewWindow.fxml")).load();
+            stressTestViewScene = new Scene(stressTestViewRoot, 800,950);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -128,6 +152,8 @@ public class MainController implements Initializable
                 }
             }
         });
+
+
 
         ipTextArea.textProperty().addListener(new ChangeListener<String>()
         {
@@ -179,6 +205,7 @@ public class MainController implements Initializable
         subnetChoiceBox.getItems().add("192.168.6.");
         subnetChoiceBox.getItems().add("192.168.7.");
         subnetChoiceBox.getItems().add("192.168.1.");
+        subnetChoiceBox.getItems().add("192.168.4.");
         subnetChoiceBox.getItems().add("10.10.10.");
         subnetChoiceBox.getItems().add("10.10.11.");
 
@@ -213,6 +240,7 @@ public class MainController implements Initializable
                 tempClock = new TimeClock();
                 tempClock.setIpAddress(ipPrefix + ipTextArea.getText());
                 logger.info("Added " + tempClock.getIpAddress() + " to ip list");
+                tempClock.setPassword(getPassword(ipPrefix + ipTextArea.getText()));
                 timeClocks.add(tempClock);
             }
         }
@@ -225,6 +253,9 @@ public class MainController implements Initializable
                     if(fullIP != null)
                     {
                         tempClock = new TimeClock();
+
+                        tempClock.setPassword(getPassword(ipPrefix+ip));
+
                         tempClock.setIpAddress(ipPrefix + ip);
                         tempClock.setPort(Integer.parseInt(fullIP.split(",")[1]));
                         logger.info("Added " + tempClock.getIpAddress() + " to ip list");
@@ -353,6 +384,56 @@ public class MainController implements Initializable
 
     }
 
+    @FXML
+    private void openConfigUtilView(ActionEvent event)
+    {
+        Node node = (Node) event.getSource();
+
+        Stage configUtilViewStage = new Stage();
+
+        configUtilViewRoot.setStyle(node.getScene().getRoot().getStyle());
+        configUtilViewStage.setTitle("Configuration Utility");
+        configUtilViewStage.setScene(configUtilViewScene);
+//        configUtilViewStage.initModality(Modality.WINDOW_MODAL);
+
+        Window primaryWindow = node.getScene().getWindow();
+
+        configUtilViewStage.initOwner(primaryWindow);
+
+        configUtilViewStage.setX(primaryWindow.getX() + 200);
+        configUtilViewStage.setY(primaryWindow.getY() + 100);
+
+        configUtilViewStage.setResizable(false);
+
+        configUtilViewStage.show();
+
+    }
+
+    @FXML
+    private void openStressTestView(ActionEvent event)
+    {
+        Node node = (Node) event.getSource();
+
+        Stage stressTestViewStage = new Stage();
+
+        stressTestViewRoot.setStyle(node.getScene().getRoot().getStyle());
+        stressTestViewStage.setTitle("Stress Test");
+        stressTestViewStage.setScene(stressTestViewScene);
+//        stressTestViewStage.initModality(Modality.WINDOW_MODAL);
+
+        Window primaryWindow = node.getScene().getWindow();
+
+        stressTestViewStage.initOwner(primaryWindow);
+
+        stressTestViewStage.setX(primaryWindow.getX() + 200);
+        stressTestViewStage.setY(primaryWindow.getY() + 100);
+
+        stressTestViewStage.setResizable(false);
+
+        stressTestViewStage.show();
+
+    }
+
 
     @FXML
     private void darkMode(ActionEvent event)
@@ -439,6 +520,50 @@ public class MainController implements Initializable
         {
             ipTextArea.appendText(","+ip);
         }
+    }
+
+    public String getPassword(String ip){
+        String pwdStr = this.passwordField.getText();
+        String password = "synergy";
+        if(passwordRadioGroup.getSelectedToggle() == macAddrPwdRadio)
+        {
+            String mac = "";
+            SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
+            SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
+            int day = Integer.valueOf(dayFormat.format(new Date()));
+            int month = Integer.valueOf(monthFormat.format(new Date()));
+            try {
+                mac = sshHandler.getLastFourMAC(ip);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (!mac.contains("80:E2:66:60")) {
+
+                password="$ynEL"+(day*month)+mac;
+            } else{
+                password="$ynEL"+(day*month);
+            }
+
+        } else if (passwordRadioGroup.getSelectedToggle() == readerNamePwdRadio) {
+            if (pwdStr.length() > 0 && pwdStr.length() <5) {
+                SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
+                SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
+                int day = Integer.valueOf(dayFormat.format(new Date()));
+                int month = Integer.valueOf(monthFormat.format(new Date()));
+                password="$ynEL"+(day*month)+pwdStr;
+            } else if (pwdStr.length() > 4){
+                password=pwdStr;
+            }
+
+        } else if (passwordRadioGroup.getSelectedToggle() == neitherPwdRadio)
+        {
+            if (!pwdStr.equals("synergy"))
+            {
+                password=pwdStr;
+            }
+        }
+
+        return password;
     }
 
 }

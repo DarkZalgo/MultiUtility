@@ -12,14 +12,18 @@ import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.*;
 import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.*;
 
 public class SSHHandler
@@ -65,6 +69,7 @@ public class SSHHandler
         setMainLabel("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
         try {
             session = new JSch().getSession(user, host, port);
+            logger.info("Using Password\t"+password);
             session.setPassword(password);
             session.setConfig("StrictHostKeyChecking", "no");
             session.setConfig("PreferredAuthentications", "password");
@@ -87,10 +92,50 @@ public class SSHHandler
             logger.info(error);
             if (error.toLowerCase().contains("auth"))
             {
-                setMainLabel("Authorization Failure at " + timeClock.getIpAddress());
-                timeClock.setRemoveFlag(true);
-                timeClock.setCanConnect(false);
-                Context.getInstance().currentClocks().remove(timeClock);
+                try {
+                    password = controller.getPassword(timeClock.getIpAddress());
+                    logger.info("Using Password\t"+password);
+                    session = new JSch().getSession(user, host, port);
+                    session.setPassword(password);
+                    session.setConfig("StrictHostKeyChecking", "no");
+                    session.setConfig("PreferredAuthentications", "password");
+                    session.setConfig("MaxAuthTries", "3");
+
+
+                    session.connect(5000);
+                } catch (JSchException ex){
+                    if (ex.getLocalizedMessage().toLowerCase().contains("auth"))
+                    {
+                        try {
+                            SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
+                            SimpleDateFormat monthFormat = new SimpleDateFormat("MM");
+                            int day = Integer.valueOf(dayFormat.format(new Date()));
+                            int month = Integer.valueOf(monthFormat.format(new Date()));
+
+                            password = "$ynEL"+(day*month)+controller.getPassword(timeClock.getIpAddress());
+                            session = new JSch().getSession(user, host, port);
+                            logger.info("Using Password\t"+password);
+                            session.setPassword(password);
+                            session.setConfig("StrictHostKeyChecking", "no");
+                            session.setConfig("PreferredAuthentications", "password");
+                            session.setConfig("MaxAuthTries", "3");
+
+
+                            session.connect(5000);
+                        } catch (JSchException exc){
+                            if (exc.getLocalizedMessage().toLowerCase().contains("auth"))
+                            {
+                                setMainLabel("Authorization Failure at " + timeClock.getIpAddress());
+                                timeClock.setRemoveFlag(true);
+                                timeClock.setCanConnect(false);
+                                Context.getInstance().currentClocks().remove(timeClock);
+                            }
+                        }
+                    }
+                }
+
+                logger.info("After Connect");
+
             }
             if (error.toLowerCase().contains("timeout"))
             {
@@ -310,6 +355,59 @@ public class SSHHandler
             }
 
         return ipOpenPort;
+    }
+
+
+    private String sendSystemCommand(String[] cmd) throws IOException
+    {
+        Runtime runtime = Runtime.getRuntime();
+        Process process = null;
+        String res = "";
+        try {
+            process = runtime.exec(cmd);
+            process.waitFor();
+        }catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line = null;
+        while ((line = stdOut.readLine()) != null)
+        {
+            res+=line;
+//            System.out.println("\nLINE: "+line+"\n");
+        }
+        return res;
+    }
+
+    public String getLastFourMAC(String ip) throws IOException {
+		String[] pingClockCmd;
+		String[] getMacCmds = null;
+		String os = System.getProperty("os.name");
+		if(os.toUpperCase().equals("LINUX"))
+		{
+			pingClockCmd = new String[] {"bash", "-c", "ping "+ ip+" -c 1 -w 75" };
+			getMacCmds = new String[] {"bash","-c", "arp -a "+ ip +"|egrep -o '([0-9a-f]{2}:){5}[0-9a-f]{2}'|sed 's|:||g'|tail -c 5"};
+		}
+		else {
+
+			pingClockCmd = new String[] {"powershell.exe","-command", "ping -n 1 -w 75 " + ip};
+			getMacCmds = new String[] {"powershell.exe","-command" ,"\"$mac=$($(arp -a "+ip+")|"
+                    + "select-string -pattern '((\\d|([a-f]|[A-F])){2}\\-){5}(\\d|([a-f]|[A-F])){2}' -AllMatches |"
+                    + "% matches |"
+                    + "% value);"
+                    + " $mac = $mac.Trim().Replace('-','');"
+                    + " $mac.substring($mac.length -4, 4)\"" };
+
+		}
+
+            String mac="";
+			sendSystemCommand(pingClockCmd);
+			mac=sendSystemCommand(getMacCmds);
+			logger.info("MAC IS " + mac);
+			return mac;
     }
 
     public void sendThroughSFTP(TimeClock clock, String args[])

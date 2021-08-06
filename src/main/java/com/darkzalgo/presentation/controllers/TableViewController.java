@@ -28,11 +28,11 @@ public class TableViewController implements Initializable
 {
     @FXML TableColumn<TimeClock, String> modelColumn, imageColumn, ipColumn, macColumn, kernelVersionColumn, uptimeColumn, versionColumn, rebootColumn;
 
-    @FXML
-    TableView<TimeClock> clockInfoTable;
+    @FXML TableView<TimeClock> clockInfoTable;
 
-    @FXML
-    ChoiceBox<String> selectIpByImageBox;
+    @FXML ChoiceBox<String> selectIpByImageBox;
+
+    @FXML Button refreshBtn;
 
     private SSHHandler sshHandler = new SSHHandler();
 
@@ -124,6 +124,7 @@ public class TableViewController implements Initializable
         });
 
         clockInfoTable.setItems(clocks);
+
     }
 
     @FXML

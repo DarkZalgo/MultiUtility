@@ -22,7 +22,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>1.7.30</version>
+            <version>1.7.32</version>
         </dependency>
         <dependency>
             <groupId>com.jcraft</groupId>
@@ -32,12 +32,12 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>17-ea+2</version>
+            <version>11</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>17-ea+2</version>
+            <version>11</version>
         </dependency>
     </dependencies>
     <build>
