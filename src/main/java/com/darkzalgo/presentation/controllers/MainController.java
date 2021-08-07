@@ -40,7 +40,7 @@ public class MainController implements Initializable
 
     @FXML CheckBox repeatCmdBox, getInfoBox;
 
-    @FXML ChoiceBox subnetChoiceBox;
+    @FXML ChoiceBox<String> subnetChoiceBox;
 
     @FXML RadioButton removeGtFilesRadio, rebootRadio;
     @FXML RadioButton readerNamePwdRadio, macAddrPwdRadio, neitherPwdRadio;

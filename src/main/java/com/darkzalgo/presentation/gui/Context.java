@@ -2,7 +2,9 @@ package com.darkzalgo.presentation.gui;
 
 
 import com.darkzalgo.model.TimeClock;
+import com.darkzalgo.presentation.controllers.ConfigUtilController;
 import com.darkzalgo.presentation.controllers.MainController;
+import com.darkzalgo.presentation.controllers.StressTestController;
 import com.darkzalgo.presentation.controllers.TableViewController;
 import javafx.beans.Observable;
 import javafx.collections.FXCollections;
@@ -53,6 +55,26 @@ public class Context
     private MainController controller;
 
     private TableViewController tableViewController;
+
+    public ConfigUtilController getConfigController() {
+        return configController;
+    }
+
+    public void setConfigController(ConfigUtilController configController) {
+        this.configController = configController;
+    }
+
+    public StressTestController getStressTestController() {
+        return stressTestController;
+    }
+
+    public void setStressTestController(StressTestController stressTestController) {
+        this.stressTestController = stressTestController;
+    }
+
+    private ConfigUtilController configController;
+
+    private StressTestController stressTestController;
 
     public ObservableList<TimeClock> currentClocks()
     {
