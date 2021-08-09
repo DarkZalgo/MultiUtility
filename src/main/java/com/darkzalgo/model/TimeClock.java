@@ -1,15 +1,21 @@
 package com.darkzalgo.model;
 
+import com.darkzalgo.presentation.gui.Context;
 import javafx.beans.property.SimpleStringProperty;
 
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class TimeClock
 {
     private String username = "root";
     private String password = "synergy";
     private String[] portsOpen;
+    private String[] rawClockInfo;
+
+
 
     private boolean removeFlag = false;
     private boolean canConnect;
@@ -92,6 +98,7 @@ public class TimeClock
     public TimeClock(){}
 
     public String getModel() {
+
         return model.get();
     }
 
@@ -193,6 +200,108 @@ public class TimeClock
 
     public void setRemoveFlag(boolean removeFlag) {
         this.removeFlag = removeFlag;
+    }
+
+    public String[] getRawClockInfo() {
+        return rawClockInfo;
+    }
+
+    public void setRawClockInfo(String[] rawClockInfo) {
+        this.rawClockInfo = rawClockInfo;
+    }
+
+    public void updateClockInfo()
+    {
+        String[] clockInfo = this.rawClockInfo;
+        if ( null != clockInfo && clockInfo.length >= 11) {
+            SimpleDateFormat formatter = new SimpleDateFormat("MMM dd hh:mm");
+            String date = formatter.format(new Date(System.currentTimeMillis()));
+            int uptime = Math.round(Float.parseFloat(clockInfo[4]));
+            int upDays = uptime / 86400;
+            int upHours = (uptime % 86400) / 3600;
+            int upMinutes = ((uptime % 86400) % 3600) / 60;
+            String image = "Unknown";
+            String version = clockInfo[2];
+            this.setVersion(clockInfo[9]);
+            if (version.toLowerCase().contains("ta"))
+                image = "XactTime";
+            if (version.toLowerCase().contains("frontline") || clockInfo[9].toLowerCase().contains("fl"))
+                image = "Frontline";
+            else if (version.toLowerCase().contains("kronos"))
+                image = "Kronos";
+
+            if (!image.equals("Kronos") || !image.equals("Frontline")) {
+                if (version.contains("1.4.1")) {
+                    this.setVersion("1.4.1");
+                } else if (version.contains("1.4.2")) {
+                    this.setVersion("1.4.2");
+                } else if (version.contains("1.4.3")) {
+                    this.setVersion("1.4.3");
+                }
+
+            }
+            if (clockInfo[6].toLowerCase().contains("wbcs")) {
+                if (version.contains("1.4.1") && version.contains("S")) {
+                    this.setVersion("1.4.1 S");
+                } else if (version.contains("1.4.2") && version.contains("S")) {
+                    this.setVersion("1.4.2 S");
+                } else if (version.contains("1.4.3") && version.contains("S")) {
+                    this.setVersion("1.4.3 S");
+                }
+                if (clockInfo[8].toLowerCase().contains("nhc"))
+                    image = "NHC";
+                else if (clockInfo[8].toLowerCase().contains("compass"))
+                    image = "Compass";
+                else if (clockInfo[8].toLowerCase().contains("unc"))
+                    image = "UNC";
+                else if (clockInfo[8].toLowerCase().contains("hm"))
+                    image = "H&M";
+                else if (clockInfo[8].toLowerCase().contains("cvs"))
+                    image = "CVS";
+                else if (clockInfo[8].toLowerCase().contains("benchmark"))
+                    image = "Benchmark";
+                else if (clockInfo[8].toLowerCase().contains("ipaper"))
+                    image = "iPaper";
+                else if (clockInfo[8].toLowerCase().contains("speedway"))
+                    image = "Speedway";
+                else if (clockInfo[8].toLowerCase().contains("gpi"))
+                    image = "GPI";
+                else if (clockInfo[8].toLowerCase().contains("mctx"))
+                    image = "Montgomery";
+                else if (clockInfo[8].toLowerCase().contains("secinc"))
+                    image = "Securitas";
+                else if (clockInfo[8].toLowerCase().contains("nhrmc"))
+                    image = "New Hanover";
+                else if (clockInfo[8].toLowerCase().contains("cha"))
+                    image = "COA";
+                else if (clockInfo[8].toLowerCase().contains("chs"))
+                    image = "CHS";
+                else
+                    image = "Infor";
+            }
+
+            if (clockInfo[6].toLowerCase().contains("menards"))
+                image = "Menard's";
+            if (clockInfo[7].contains("SynergyDemo"))
+                image = "SGA";
+            if (clockInfo[7].toLowerCase().contains("tress"))
+                image = "Grupo";
+
+            if (clockInfo[10].contains("3.")) {
+                this.setVersion(clockInfo[10]);
+            }
+
+            this.setMacAddress(!clockInfo[1].equals("") ? clockInfo[1].trim() : "Default");
+            this.setModel(clockInfo[0].contains("X") ? "SYnergy/A20" : "SYnergy/A 2416");
+            this.setImage(image);
+
+            this.setKernelVersion(clockInfo[3]);
+            this.setUptime("Days: " + upDays + " Hrs: " + upHours + " Mins: " + upMinutes);
+            this.setRebootCount(clockInfo[5]);
+            this.setCanConnect(true);
+            this.setRemoveFlag(false);
+            Context.getInstance().getTableViewController().addToImageSet(image);
+        }
     }
 
 }

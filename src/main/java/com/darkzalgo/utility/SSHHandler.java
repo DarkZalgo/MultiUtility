@@ -19,11 +19,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SSHHandler
 {
@@ -40,6 +43,28 @@ public class SSHHandler
 
     private ExecutorService cmdThreadPool = Executors.newFixedThreadPool((int) (cores*1.5));
 
+    private Pattern pattern;
+    private Matcher matcher;
+
+    private static final String IPADDRESS_PATTERN =
+            "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
+
+
+
+    public boolean isIpValid(final String ip){
+        matcher = pattern.matcher(ip);
+        System.out.println("IP: " + ip + "IP is Valid: " +matcher.matches());
+        return matcher.matches();
+    }
+    public boolean isValidMAC(String mac) {
+        pattern = Pattern.compile("^([0-9A-Fa-f]{2}[\\.:-]){5}([0-9A-Fa-f]{2})$");
+        matcher = pattern.matcher(mac);
+        return matcher.find();
+    }
+
 
 
     public void ConnectController(AbstractController controller)
@@ -52,10 +77,11 @@ public class SSHHandler
     public SSHHandler(AbstractController controller)
     {
         ConnectController(controller);
+        pattern = Pattern.compile(IPADDRESS_PATTERN);
     }
     public SSHHandler()
     {
-
+        pattern = Pattern.compile(IPADDRESS_PATTERN);
     }
     private Session connect(TimeClock timeClock)
     {
@@ -67,6 +93,10 @@ public class SSHHandler
         String host = timeClock.getIpAddress();
         logger.info("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
         sendResultMsg("Connecting to " + host);
+        if (password.matches(".*[ẞßäÄüÜöÖ].*"))
+        {
+            password = new String (password.getBytes(), StandardCharsets.ISO_8859_1);
+        }
         try {
             session = new JSch().getSession(user, host, port);
             logger.info("Using Password\t"+password);
@@ -96,6 +126,10 @@ public class SSHHandler
                     password = controller.getPassword(timeClock.getIpAddress());
                     logger.info("Using Password\t"+password);
                     session = new JSch().getSession(user, host, port);
+                    if (password.matches(".*[ẞßäÄüÜöÖ].*"))
+                    {
+                        password = new String (password.getBytes(), StandardCharsets.ISO_8859_1);
+                    }
                     session.setPassword(password);
                     session.setConfig("StrictHostKeyChecking", "no");
                     session.setConfig("PreferredAuthentications", "password");
@@ -115,6 +149,10 @@ public class SSHHandler
                             password = "$ynEL"+(day*month)+controller.getPassword(timeClock.getIpAddress());
                             session = new JSch().getSession(user, host, port);
                             logger.info("Using Password: "+password);
+                            if (password.matches(".*[ẞßäÄüÜöÖ].*"))
+                            {
+                                password = new String (password.getBytes(), StandardCharsets.ISO_8859_1);
+                            }
                             session.setPassword(password);
                             session.setConfig("StrictHostKeyChecking", "no");
                             session.setConfig("PreferredAuthentications", "password");
@@ -195,8 +233,45 @@ public class SSHHandler
     {
         SingleCommandHandlerThread singleCommandTask = new SingleCommandHandlerThread(timeClock,cmd);
         cmdThreadPool.submit(singleCommandTask);
+    }
+
+    public String sendCmdBlocking(TimeClock clock, String cmd ) throws JSchException, IOException, InterruptedException
+    {
+        logger.info("STARTING SENDCMDBLOCKING");
+            int port = clock.getPort();
+            String user = clock.getUsername();
+            String host = clock.getIpAddress();
+
+            Session session = connect(clock);
+            Channel channel = session.openChannel("exec");
+
+            StringBuilder cmdOutput = new StringBuilder();
+
+            ((ChannelExec) channel).setCommand(cmd);
+
+            InputStream cmdStream = channel.getInputStream();
+            sendResultMsg("Sending command " + cmd + " to " + user + "@" + host + ":" + port);
+            logger.info("Sending command " + cmd + " to " + user + "@" + host + ":" + port);
+            channel.connect();
+
+            int readByte = cmdStream.read();
+
+            while (readByte != 0xffffffff)
+            {
+                cmdOutput.append((char) readByte);
+                readByte = cmdStream.read();
+            }
+
+            sendResultMsg("Received command output: " + cmdOutput.toString());
+            channel.disconnect();
+            disconnect(session);
+            return cmdOutput.toString().trim();
 
     }
+    public String sendCmdBlocking(TimeClock clock, Cmds cmd, String... strings) throws JSchException, IOException, InterruptedException {
+       return sendCmdBlocking(clock, getCmd(cmd, strings));
+    }
+
 
     public void getClockInfo(TimeClock timeClock) throws IOException, JSchException, InterruptedException {
         String[] cmds = {
@@ -212,6 +287,11 @@ public class SSHHandler
                 "grep ^SWV /home/admin/synergy/conf/sysconfig.properties|awk -F= '{print $2}'|awk -F. '{print $3}'",
                 "grep 'Version' /Arm/Synergy/AppProperties.xml|awk -F'- ' '{print $2}'|awk -F\\< '{print $1}'"
         };
+        sendMultiCmd(timeClock, cmds);
+    }
+
+    public void getClockInfo(TimeClock timeClock, String[] cmds) throws IOException, JSchException, InterruptedException {
+
         sendMultiCmd(timeClock, cmds);
     }
 
@@ -419,6 +499,189 @@ public class SSHHandler
 			return mac;
     }
 
+    public String getCmd(Cmds cmd, String... strings)
+    {
+        String command = "";
+        switch (cmd)
+        {
+            case CLEARDATA:
+                command = "killall shutdownwdt || shutdownwdt -m 1000 1>>/dev/null 2>>/dev/null  || killall java && rm -rf /home/admin/wbcs/log/* && rm -rf /home/admin/wbcs/fingerPrints && sleep 2 && rm -rf /home/admin/wbcs/data";
+                break;
+            case GETNTPD:
+                command = "cat /etc/default/ntpd | grep NTPSERVERS= | awk -F= '{print $2}' | sed 's/\\\"//g'";
+                break;
+            case GETNTP:
+                command = "cat /etc/ntp.conf | grep server | awk '{print $2}'";
+                break;
+            case GETURL:
+                command = "cat /home/admin/wbcs/conf/settings.conf | grep wbsynch.webservice.url | awk -F= '{print $2}'";
+                break;
+            case GETTZ:
+                command = "cat /etc/TZ";
+                break;
+            case GETTIMEZONE:
+                command = "cat /etc/timezone";
+                break;
+            case GETMAC:
+                command = "ifconfig eth0 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'";
+                break;
+            case GETNETINTERFACES:
+                command = "cat /etc/network/interfaces";
+                break;
+            case GET2410VOL:
+                command = "cat /etc/init.d/S74LightSound  | grep amixer | awk '{printf \"%d\", $6}'";
+                break;
+            case GET2416VOL:
+                command = "cat /etc/init.d/synergy2416/S71LightSoundCamera  | grep amixer | awk '{printf \"%d\", $6}'";
+                break;
+            case GETA20VOL:
+                command = "cat /etc/init.d/synergyX/LightSoundCameraS71 | grep amixer | awk '{printf \"%d\", $6}'";
+                break;
+            case GETREADERNAME:
+                command = "cat /home/admin/wbcs/conf/settings.conf | grep wbsynch.webservice.serverName | awk -F= '{print $2}'";
+                break;
+            case GETUPDATETYPE:
+                command = "cat /home/admin/wbcs/conf/settings.conf | grep wbsynch.softwareupdates.type | awk -F= '{print $2}'";
+                break;
+            case GETETHDNS:
+                command="cat /etc/resolv.conf|egrep -o '([0-9]{1,3}.){3}[0-9]{1,3}'";
+                break;
+            case GETWIFIDNS:
+                command="cat /etc/Wireless/resolv.conf|egrep -o '([0-9]{1,3}.){3}[0-9]{1,3}'";
+                break;
+            case GETWIFINET:
+                command="grep \"iface wlan0\" /etc/network/interfaces|grep dhcp > /dev/null 2>&1; if [ $? -eq 0 ]; then echo DHCP; else echo \"Static<br><b>Static WiFi:</b>\" ;grep -A 5 \"iface wlan0\" /etc/network/interfaces|grep \"address\\|netmask\\|gateway\" ; fi";
+                break;
+            case GETWIFICONF:
+                command="cat /etc/wifi.conf || cat /etc/wifi.conf.current";
+                break;
+            case WIN10PING:
+                command = "ping -n 1 -w 75 "+strings[0];
+                break;
+            case WIN10GETMAC:
+                command = "\"$mac=$($(arp -a "+strings[0]+")|"
+                        + "select-string -pattern '((\\d|([a-f]|[A-F])){2}\\-){5}(\\d|([a-f]|[A-F])){2}' -AllMatches |"
+                        + "% matches |"
+                        + "% value);"
+                        + " $mac = $mac.Trim().Replace('-','');"
+                        + " $mac.substring($mac.length -4, 4)\"";
+                break;
+            case LINUXPING:
+                command = "ping "+ strings[0]+" -c 1 -w 75";
+                break;
+            case LINUXGETMAC:
+                command = "arp -a "+strings[0]+"|egrep -o '([0-9a-f]{2}:){5}[0-9a-f]{2}'|sed 's|:||g'|tail -c 5";
+                break;
+            case SETTZ:
+                command = "echo " + strings[0]+">"+"/etc/TZ";
+                break;
+            case SETTIMEZONE:
+                command = "echo "+ strings[0] + ">" + "/etc/timezone";
+                break;
+            case SETNETINTERFACES:
+                String nthReplaceStr="1";
+                if ( strings[0].equals("wlan0"))
+                {
+                    nthReplaceStr="$(grep netmask /etc/network/interfaces|wc -l)";
+                }
+                if (strings[1].equals("static"))
+                {
+                    command = "grep \"iface "+strings[0]+"\" /etc/network/interfaces|grep dhcp;"
+                            + " if [ $? -eq 0 ]; then "
+                            + "sed -r 's|(iface "+strings[0]+" inet) dhcp|\\1 static\\n\\taddress "+strings[2]+"\\n\\tnetmask "+strings[3]+"\\n\\tgateway "+strings[4]+"|'  -i /etc/network/interfaces;"
+                            + " else sed -r \"s|(address).*|\\1 "+strings[2]+"|"+nthReplaceStr+"\" -i /etc/network/interfaces; "
+                            + "sed -r \"s|(netmask).*|\\1 "+strings[3]+"|"+nthReplaceStr+"\" -i /etc/network/interfaces ; "
+                            + "sed -r \"s|(gateway).*|\\1 "+strings[4]+"|"+nthReplaceStr+"\" -i /etc/network/interfaces ; "
+                            + "fi";
+                } else if (strings[1].equals("dhcp"))  {
+                    command = "grep \"iface "+strings[0]+"\" /etc/network/interfaces|grep static;"
+                            + " if [ $? -eq 0 ]; then sed -r 's|iface "+strings[0]+" inet static|iface "+strings[0]+" inet dhcp|' -i /etc/network/interfaces ;"
+                            + " sed -r \":regex;N;\\$!bregex;s|address.*gateway ([0-9]{1,3}.){3}[0-9]{1,3}\\n||"+nthReplaceStr+"\" -i /etc/network/interfaces ;"
+                            + " fi";
+                }
+
+                break;
+            case REFRESHWIFICONF:
+                command = "rm /etc/wpa_supplicant.conf && touch /etc/wpa_supplicant.conf && rm /etc/wifi.conf.current";
+                break;
+            case SETCUSTURL:
+                command = "sed -r 's|wbsynch.webservice.url.*|wbsynch.webservice.url = "+strings[0]+"|' -i /home/admin/wbcs/conf/settings.conf";
+                break;
+            case SETMAC:
+                command = "awk \"BEGIN { print "+"\\"+"\""+strings[0]+"\\"+"\" }\" > /etc/mac.txt";
+                break;
+            case SETNTPD:
+                command = "awk \"BEGIN { print "+"\\"+"\""+ strings[0] +"\\42" +"\\"+"\" }\" > /etc/default/ntpd";
+                break;
+            case SETNTP:
+                command = "echo -e "+strings[0]+" >> /etc/ntp.conf";
+                break;
+            case REMOVENTP:
+                command = "rm /etc/ntp.conf";
+                break;
+            case SETVOL2410:
+                command = "sed -i 's/amixer -c 0 set Master .*/amixer -c 0 set Master " + strings[0] +"/g' /etc/init.d/S74LightSound";
+            case SETVOL2416:
+                command = "sed -i 's/amixer -c 0 set \"${aMaster}\" .*/amixer -c 0 set \"${aMaster}\" " + strings[0] +"/g' /etc/init.d/synergy2416/S74LightSoundCamera";
+                break;
+            case SETVOLA20:
+                command = "sed -i 's/amixer -c 0 set \"${aMaster}\" .*/amixer -c 0 set \"${aMaster}\" " + strings[0] +"/g' /etc/init.d/synergyX/LightSoundCameraS71";
+                break;
+            case SETREADERNAME:
+                String readerName="";
+                for (String str : strings[0].split(""))
+                {
+                    if (str.matches(".*[;&|\"\'].*"))
+                    {
+                        readerName += "\\" + str;
+                    } else {
+                        readerName += str;
+                    }
+                }
+                command = "sed -i 's/wbsynch.webservice.serverName.*=.*/wbsynch.webservice.serverName = " + readerName +"/' /home/admin/wbcs/conf/settings.conf &&  sed -i 's/server.name.*=.*/server.name = " + strings[0] +"/' /home/admin/wbcs/conf/settings.conf";
+                break;
+            case SETUPDATETYPE:
+                command = "sed -r -i 's/wbsynch.softwareupdates.type\\s*=\\s*(.*)/wbsynch.softwareupdates.type = "+strings[0] +"/' /home/admin/wbcs/conf/settings.conf";
+                break;
+            case FIXFREEZE:
+                command = "killall watchdog && sleep 2 && killall java && sleep 2 && rm /home/admin/wbcs/data/wbcsdb.lck";
+                break;
+            case WIPETABLES:
+                command = "killall watchdog && sleep 2 && killall java && sleep 2 && rm -rf /home/admin/wbcs/data";
+                break;
+            case ADDSCRIPTPERMISSIONS:
+                command = "chmod 755 /home/admin/wbcs/scripts/* ; sync ; sleep 1 ; sync && sync";
+                break;
+            case REBOOT:
+                command = "reboot";
+                break;
+            case SETDNS:
+
+                if (strings[0].equals("eth0"))
+                {
+                    command = "echo \"nameserver "+strings[1]+" # eth0\" > /etc/resolv.conf.eth0";
+                    for (int i = 2; i< strings.length-1; i++)
+                    {
+                        if (strings[i] == null || strings[i].length()<1)
+                            continue;
+                        command = command + "&& echo \"nameserver "+strings[i]+" # eth0\" >> /etc/resolv.conf.eth0";
+                    }
+                } else if (strings[0].equals("wlan0")) {
+                    command = "echo \"nameserver "+strings[1]+" # wlan0\" > /etc/Wireless/resolv.conf";
+                    for (int i = 2; i< strings.length-1; i++)
+                    {
+                        if (strings[i] == null || strings[i].length()<1)
+                            continue;
+                        command = command + "&& echo \"nameserver "+strings[i]+" # wlan0\" >>  /etc/Wireless/resolv.conf";
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+        return command;
+    }
+
     public void sendThroughSFTP(TimeClock clock, String args[])
     {
         SFTPHandlerThread sftpTask = new SFTPHandlerThread(clock, args);
@@ -489,6 +752,7 @@ public class SSHHandler
                 @Override
                 public void handle(WorkerStateEvent workerStateEvent)
                 {
+                    if (!cmds[0].contains("configUtilCmds"))
                     setClockInfo(clock, (MultiCommandHandlerThread.this.getValue()));
                 }
             });
@@ -512,7 +776,7 @@ public class SSHHandler
 
                 InputStream cmdStream = channel.getInputStream();
                 showProgress((double) i/length);
-                sendResultMsg("Sending command " + cmds[i] + " to " + user + "@" + host + ":" + port);
+                sendResultMsg("Sending command " + cmds[i] + " to " + host );
                 logger.info("Sending command " + cmds[i] + " to " + user + "@" + host + ":" + port);
                 channel.connect();
 
@@ -526,7 +790,14 @@ public class SSHHandler
                 }
 
                 channel.disconnect();
-                cmdOutput[i] = cmdOutputBuilder.toString();
+                if(cmds[0].contains("configUtilCmds"))
+                {
+                    switch(i){
+
+                    }
+                } else {
+                    cmdOutput[i] = cmdOutputBuilder.toString();
+                }
             }
             showProgress(1);
 
