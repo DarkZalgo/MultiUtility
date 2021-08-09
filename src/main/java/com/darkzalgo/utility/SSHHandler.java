@@ -1,6 +1,7 @@
 package com.darkzalgo.utility;
 
 
+import com.darkzalgo.presentation.controllers.AbstractController;
 import com.darkzalgo.presentation.controllers.MainController;
 import com.darkzalgo.presentation.gui.Context;
 import com.jcraft.jsch.*;
@@ -18,12 +19,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.*;
-import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.*;
 
 public class SSHHandler
@@ -37,20 +36,20 @@ public class SSHHandler
 
     private int[] portsToCheck = {22,3735};
 
-    private static MainController controller;
+    private AbstractController controller;
 
     private ExecutorService cmdThreadPool = Executors.newFixedThreadPool((int) (cores*1.5));
 
 
 
-    public static void ConnectController(MainController controller)
+    public void ConnectController(AbstractController controller)
     {
 
-        SSHHandler.controller = controller;
+        this.controller = controller;
 
     }
 
-    public SSHHandler(MainController controller)
+    public SSHHandler(AbstractController controller)
     {
         ConnectController(controller);
     }
@@ -60,13 +59,14 @@ public class SSHHandler
     }
     private Session connect(TimeClock timeClock)
     {
+        showProgress(-1);
         Session session = null;
         String password = timeClock.getPassword();
         int port = timeClock.getPort();
         String user = timeClock.getUsername();
         String host = timeClock.getIpAddress();
         logger.info("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
-        setMainLabel("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
+        sendResultMsg("Connecting to " + host);
         try {
             session = new JSch().getSession(user, host, port);
             logger.info("Using Password\t"+password);
@@ -80,14 +80,14 @@ public class SSHHandler
 
 
             logger.info("Successfully connected to " + user + "@" + host + ":" + port);
-            setMainLabel("Successfully connected to " + user + "@" + host + ":" + port);
+            sendResultMsg("Successfully connected to " + host);
             timeClock.setRemoveFlag(false);
 
         }catch (JSchException e )
         {
             SimpleDateFormat formatter = new SimpleDateFormat("MM-dd-yyyy hh:mm:ss");
             String date = formatter.format(new Date(System.currentTimeMillis()));
-            appendMainErrorArea("[" + date + "] --  " + e.getLocalizedMessage()+ " at " + timeClock.getIpAddress());
+            sendErrorMsg("[" + date + "] --  " + e.getLocalizedMessage()+ " at " + timeClock.getIpAddress());
             String error = e.getLocalizedMessage();
             logger.info(error);
             if (error.toLowerCase().contains("auth"))
@@ -114,7 +114,7 @@ public class SSHHandler
 
                             password = "$ynEL"+(day*month)+controller.getPassword(timeClock.getIpAddress());
                             session = new JSch().getSession(user, host, port);
-                            logger.info("Using Password\t"+password);
+                            logger.info("Using Password: "+password);
                             session.setPassword(password);
                             session.setConfig("StrictHostKeyChecking", "no");
                             session.setConfig("PreferredAuthentications", "password");
@@ -125,10 +125,11 @@ public class SSHHandler
                         } catch (JSchException exc){
                             if (exc.getLocalizedMessage().toLowerCase().contains("auth"))
                             {
-                                setMainLabel("Authorization Failure at " + timeClock.getIpAddress());
+                                sendResultMsg("Incorrect password for " + timeClock.getIpAddress());
                                 timeClock.setRemoveFlag(true);
                                 timeClock.setCanConnect(false);
                                 Context.getInstance().currentClocks().remove(timeClock);
+                                showProgress(0);
                             }
                         }
                     }
@@ -139,7 +140,8 @@ public class SSHHandler
             }
             if (error.toLowerCase().contains("timeout"))
             {
-                setMainLabel("Socket Timeout Failure " + timeClock.getIpAddress());
+                sendResultMsg("Connection timed out for " + timeClock.getIpAddress());
+                showProgress(0);
                 timeClock.setRemoveFlag(true);
                 timeClock.setCanConnect(false);
                 Context.getInstance().currentClocks().remove(timeClock);
@@ -148,14 +150,14 @@ public class SSHHandler
         return session;
     }
 
-    private void setMainLabel(String msg)
+    private void sendResultMsg(String msg)
     {
         Platform.runLater(()->{
             controller.setMsgLabelText(msg);
         });
     }
 
-    private void appendMainErrorArea(String msg)
+    private void sendErrorMsg(String msg)
     {
         Platform.runLater(()->{
             controller.appendErrorTextArea(msg);
@@ -174,6 +176,13 @@ public class SSHHandler
         {
 
         }
+    }
+
+    private void showProgress(double progress)
+    {
+        Platform.runLater(()->{
+            controller.setProgress(progress);
+        });
     }
 
     private void sendMultiCmd(TimeClock timeClock, String[] cmds)
@@ -319,24 +328,24 @@ public class SSHHandler
             for (int port : portsToCheck)
             {
                 try {
-                    setMainLabel("Checking ip " + ip + " for connectivity...");
+                    sendResultMsg("Checking ip " + ip + " for connectivity...");
                     if (!resultIpList.contains(ip))
                     {
                         logger.info("Testing " + ip + ":" + port + " for connectivity...");
                         Socket socket = new Socket();
                         socket.connect(new InetSocketAddress(ip, port), 75);
                         logger.info("Port " + port + " is open on ip " + ip);
-                        setMainLabel("Port " + port + " is open on ip " + ip+ "!");
+                        sendResultMsg("Port " + port + " is open on ip " + ip+ "!");
                         resultIpList.add(ip);
                     }
 
                 } catch (IOException e) {
                     logger.info(e.getLocalizedMessage() + " for ip " + ip + ":" + port);
-                    appendMainErrorArea(ip + ":" + port + " is not up or SSH is not turned on");
+                    sendErrorMsg(ip + ":" + port + " is not up or SSH is not turned on");
                 }
             }
         });
-        setMainLabel("Found " + resultIpList.size() + " IP Addresses");
+        sendResultMsg("Found " + resultIpList.size() + " IP Addresses");
         controller.setIpTextAreaIPs(resultIpList);
     }
 
@@ -449,8 +458,8 @@ public class SSHHandler
             ((ChannelExec) channel).setCommand(cmd);
 
             InputStream cmdStream = channel.getInputStream();
-            setMainLabel("Sending command \n" + cmd + " \nto " + user + "@" + host + ":" + port);
-            logger.info("Sending command \n" + cmd + " \nto " + user + "@" + host + ":" + port);
+            sendResultMsg("Sending command " + cmd + " to " + user + "@" + host + ":" + port);
+            logger.info("Sending command " + cmd + " to " + user + "@" + host + ":" + port);
             channel.connect();
 
             int readByte = cmdStream.read();
@@ -493,16 +502,18 @@ public class SSHHandler
             String[] cmdOutput = new String[cmds.length];
             StringBuilder cmdOutputBuilder;
             Session session = connect(clock);
+            int length = cmds.length;
+            for (int i = 0; i < length; i++) {
 
-            for (int i = 0; i < cmds.length; i++) {
                 Channel channel = session.openChannel("exec");
                 cmdOutputBuilder = new StringBuilder();
 
                 ((ChannelExec) channel).setCommand(cmds[i]);
 
                 InputStream cmdStream = channel.getInputStream();
-                setMainLabel("Sending command \n" + cmds[i] + " \nto " + user + "@" + host + ":" + port);
-                logger.info("Sending command \n" + cmds[i] + " \nto " + user + "@" + host + ":" + port);
+                showProgress((double) i/length);
+                sendResultMsg("Sending command " + cmds[i] + " to " + user + "@" + host + ":" + port);
+                logger.info("Sending command " + cmds[i] + " to " + user + "@" + host + ":" + port);
                 channel.connect();
 
 
@@ -517,10 +528,11 @@ public class SSHHandler
                 channel.disconnect();
                 cmdOutput[i] = cmdOutputBuilder.toString();
             }
+            showProgress(1);
 
-            setMainLabel("Done sending commands to " + user + "@" + host + ":" + port);
+            sendResultMsg("Done sending commands to " + user + "@" + host + ":" + port);
             disconnect(session);
-            setMainLabel("Disconnected from " + user + "@" + host + ":" + port);
+            sendResultMsg("Disconnected from " + user + "@" + host + ":" + port);
             return cmdOutput;
         }
     }

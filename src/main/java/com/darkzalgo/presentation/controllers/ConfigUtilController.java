@@ -1,7 +1,9 @@
 package com.darkzalgo.presentation.controllers;
 
+import com.darkzalgo.model.TimeClock;
 import com.darkzalgo.presentation.gui.Context;
 import com.darkzalgo.utility.SSHHandler;
+import com.jcraft.jsch.JSchException;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
@@ -12,17 +14,19 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Text;
 
 import javafx.event.ActionEvent;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.ResourceBundle;
-import java.util.Set;
 
-public class ConfigUtilController extends MainController implements Initializable {
+import java.io.IOException;
+import java.net.URL;
+import java.util.*;
+
+public class ConfigUtilController extends AbstractController implements Initializable {
 
     private SSHHandler sshHandler = new SSHHandler(this);
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigUtilController.class);
+
+    @FXML ProgressBar progressBar;
+
     @FXML ChoiceBox<String> modelChoiceBox, tzChoiceBox;
 
     @FXML TextField urlField, ipField, curPwdField, ntpField, newPwdField, volField, macAddrField, readerNameField, swupdateTypeField;
@@ -31,6 +35,7 @@ public class ConfigUtilController extends MainController implements Initializabl
 
     @FXML Label wiredIpLbl, wiredSubnetLbl, wiredGatewayLbl, wiredDNS1Lbl, wiredDNS2Lbl, wiredDNS3Lbl;
     @FXML Label wifiIpLbl, wifiSubnetLbl, wifiGatewayLbl, ssidLbl, passphraseLbl, wifiDNS1Lbl, wifiDNS2Lbl, wifiDNS3Lbl;
+    @FXML Label resultLbl;
 
     @FXML TextArea outputTextArea;
 
@@ -78,6 +83,7 @@ public class ConfigUtilController extends MainController implements Initializabl
             tmpLbl.setVisible(false);
         for (Label tmpLbl : wifiLabelSet)
             tmpLbl.setVisible(false);
+        resultLbl.setText("");
 
         Context.getInstance().setConfigController(this);
 
@@ -186,6 +192,36 @@ public class ConfigUtilController extends MainController implements Initializabl
         });
     }
 
+    @Override
+    public void setMsgLabelText(String msg) {
+        resultLbl.setText(msg);
+    }
+
+    @Override
+    public void setIpTextAreaIPs(List<String> ipAddresses) {
+
+    }
+
+    @Override
+    public void appendErrorTextArea(String msg) {
+        System.out.println("Appenderrortextarea");
+    }
+
+    @Override
+    public void setSelectedIps(String ip) {
+        System.out.println("setSelectedIps");
+    }
+
+    @Override
+    public String getPassword(String ip) {
+        return "getPasswordConfigUtil";
+    }
+
+    @Override
+    public void setProgress(double progress) {
+        progressBar.setProgress(progress);
+    }
+
     @FXML
     private void clear(ActionEvent event)
     {
@@ -203,6 +239,14 @@ public class ConfigUtilController extends MainController implements Initializabl
         wiredCheckBox.setSelected(false);
         outputTextArea.clear();
 
+    }
+
+    @FXML
+    private void getInfo(ActionEvent event) throws InterruptedException, JSchException, IOException {
+        TimeClock clock = new TimeClock();
+        clock.setIpAddress("192.168.4.50");
+        clock.setPassword("$ynEL72RVER");
+        sshHandler.getClockInfo(clock);
     }
 
 

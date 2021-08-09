@@ -34,7 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-public class MainController implements Initializable
+public class MainController extends AbstractController implements Initializable
 {
     @FXML TextArea ipTextArea, errorTextArea, commandTextArea;
 
@@ -106,7 +106,7 @@ public class MainController implements Initializable
         }
         try {
             configUtilViewRoot = new FXMLLoader(getClass().getResource("/configUtilViewWindow.fxml")).load();
-            configUtilViewScene = new Scene(configUtilViewRoot, 800,950);
+            configUtilViewScene = new Scene(configUtilViewRoot, 800,975);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -486,12 +486,12 @@ public class MainController implements Initializable
             }));
         }
     }
-
+    @Override
     public void setMsgLabelText(String msg)
     {
         msgLabel.setText(msg);
     }
-
+    @Override
     public void setIpTextAreaIPs(List<String> ipAddresses)
     {
         ipTextArea.setText("");
@@ -503,13 +503,19 @@ public class MainController implements Initializable
             ipTextArea.setText(ipTextArea.getText().substring(0,ipTextArea.getLength()-1));
     }
 
+    @Override
+    public void setProgress(double progress)
+    {
+        System.out.println("Progress bar " + progress);
+    }
+
     public void appendErrorTextArea(String msg)
     {
         SimpleDateFormat formatter = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
         String date = formatter.format(new Date(System.currentTimeMillis()));
         errorTextArea.appendText("["+ date +"] -- " + msg + "\n");
     }
-
+    @Override
     public void setSelectedIps(String ip)
     {
         if (ipTextArea.getText().equals(""))
@@ -522,6 +528,7 @@ public class MainController implements Initializable
         }
     }
 
+    @Override
     public String getPassword(String ip){
         String pwdStr = this.passwordField.getText();
         String password = "synergy";
