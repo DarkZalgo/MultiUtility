@@ -5,6 +5,7 @@ import com.darkzalgo.presentation.gui.Context;
 import com.darkzalgo.utility.Cmds;
 import com.darkzalgo.utility.SSHHandler;
 import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -92,6 +93,21 @@ public class ConfigUtilController extends AbstractController implements Initiali
         for (Label tmpLbl : wifiLabelSet)
             tmpLbl.setVisible(false);
         resultLbl.setText("");
+        tzChoiceBox.getItems().add("GMT-08:00Y\t-\tAmerica/Los_Angeles\t-\t(Pacific/PDT)");
+        tzChoiceBox.getItems().add("GMT-07:00Y\t-\tAmerica/Denver\t\t-\t(Mountain Daylight/MDT)");
+        tzChoiceBox.getItems().add("GMT-06:00Y\t-\tAmerica/Chicago\t\t-\t(Central/CDT)");
+        tzChoiceBox.getItems().add("GMT-05:00Y\t-\tAmerica/New_York\t\t-\t(Eastern/EST)");
+        tzChoiceBox.getItems().add("GMT-07:00Y\t-\tAmerica/Phoenix\t\t-\t(Mountain Standard/MST)");
+        tzChoiceBox.getItems().add("GMT-10:00Y\t-\tPacific/Honolulu\t\t-\t(Hawaii Standard/HST)");
+        tzChoiceBox.getItems().add("GMT-4:00Y\t-\tAmerica/Toronto\t\t-\t(Eastern Canadian/EDT)");
+        tzChoiceBox.getItems().add("GMT+1:00Y\t-\tEurope/London\t\t\t-\t(Western European/WET)");
+        tzChoiceBox.getItems().add("GMT+2:00Y\t-\tEurope/Berlin\t\t\t-\t(Central European/CET)");
+        tzChoiceBox.getItems().add("GMT+3:00Y\t-\tEurope/Helsinki\t\t-\t(Eastern European/EET)");
+
+        modelChoiceBox.getItems().add("SYnergy/X  / A20");
+        modelChoiceBox.getItems().add("SYnergy/A 2416");
+        modelChoiceBox.getItems().add("SYnergy/A 2410");
+        logger.info("CUR TZ CHOICE VALUE IS " + tzChoiceBox.getValue());
 
         Context.getInstance().setConfigController(this);
 
@@ -202,7 +218,9 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
     @Override
     public void setMsgLabelText(String msg) {
-        resultLbl.setText(msg.replace("\n",""));
+        Platform.runLater(() -> {
+            resultLbl.setText(msg.replace("\n", ""));
+        });
     }
 
     @Override
@@ -238,7 +256,9 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
     @Override
     public void setProgress(double progress) {
-        progressBar.setProgress(progress);
+        Platform.runLater(() -> {
+            progressBar.setProgress(progress);
+        });
     }
 
     @FXML
@@ -257,24 +277,29 @@ public class ConfigUtilController extends AbstractController implements Initiali
         wifiCheckBox.setSelected(false);
         wiredCheckBox.setSelected(false);
         outputTextArea.clear();
+        setProgress(0);
+        setMsgLabelText("");
+        String[] tzVal=tzChoiceBox.getValue().split("-");
+        logger.info("CURRENT TZ CHOICE" + (tzVal.length > 3 ? tzVal[2]:tzVal[1]));
+        logger.info("TZ VAL LENGTH" + tzChoiceBox.getValue().split("-").length);
 
     }
 
     @FXML
     private void getInfo(ActionEvent event) throws InterruptedException, JSchException, IOException {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        getInfoAsyncThread getInfoTask = new getInfoAsyncThread();
+        getInfoThread getInfoTask = new getInfoThread();
         executorService.submit(getInfoTask);
     }
     @FXML
     private void setInfo(ActionEvent event)
     {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        setInfoAsyncThread setInfoTask = new setInfoAsyncThread();
+        setInfoThread setInfoTask = new setInfoThread();
         executorService.submit(setInfoTask);
-        getInfoAsyncThread getInfoTask = new getInfoAsyncThread();
+        getInfoThread getInfoTask = new getInfoThread();
         executorService.submit(getInfoTask);
-        setMsgLabelText("Done checking info after applying");
+
     }
 
     @FXML
@@ -283,7 +308,7 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
     }
 
-    private class getInfoAsyncThread extends SwingWorker<String, String>
+    private class getInfoThread extends SwingWorker<String, String>
     {
         @Override
         protected String doInBackground() throws Exception {
@@ -297,44 +322,92 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
                 return "invalidIPAddress";
             }
+            if (ConfigUtilController.this.modelChoiceBox.getValue() == null)
+            {
+                return "noModelChosen";
+            }
             clock.setIpAddress(ipField.getText());
             clock.setPassword(getPassword(ipField.getText()));
-            clock.setModel("Synergy/X A20");
+            clock.setModel(ConfigUtilController.this.modelChoiceBox.getValue());
+            ConfigUtilController.this.setProgress(-1);
+            ConfigUtilController.this.setMsgLabelText("Attempting to connect to " + ipField.getText());
+            Session session = null;
+            try {
+               session  = sshHandler.longConnect(clock);
+            }catch (JSchException e)
+            {
+                return "badPwd";
+            }
+            if (session==null)
+            {
+                return "";
+            }
+
             StringBuilder getInfoStringBuilder = new StringBuilder();
 
                 try {
+                    ConfigUtilController.this.setProgress(0);
 
+                    ConfigUtilController.this.setMsgLabelText("Getting NTP servers from " + ipField.getText());
+                    getInfoStringBuilder.append("NTP Servers (/etc/default/ntpd): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETNTPD));
+                    ConfigUtilController.this.setProgress((double)1/12);
 
-                   getInfoStringBuilder.append("NTP Servers (/etc/default/ntpd): " + sshHandler.sendCmdBlocking(clock, Cmds.GETNTPD));
-                    getInfoStringBuilder.append("\nNTP Servers (/etc/ntp.conf): " + sshHandler.sendCmdBlocking(clock, Cmds.GETNTP));
-                    getInfoStringBuilder.append("\nCustomer URL: " + sshHandler.sendCmdBlocking(clock, Cmds.GETURL));
-                    getInfoStringBuilder.append("\nTime Zone (/etc/TZ): " + sshHandler.sendCmdBlocking(clock, Cmds.GETTZ));
-                    getInfoStringBuilder.append("\nTime Zone (/etc/timezone): " + sshHandler.sendCmdBlocking(clock, Cmds.GETTIMEZONE));
-                    getInfoStringBuilder.append("\nMAC Address: " + sshHandler.sendCmdBlocking(clock, Cmds.GETMAC));
+                    getInfoStringBuilder.append("\nNTP Servers (/etc/ntp.conf): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETNTP));
+                    ConfigUtilController.this.setProgress((double)2/12);
+
+                    ConfigUtilController.this.setMsgLabelText("Getting Customer URL from " + ipField.getText());
+                    getInfoStringBuilder.append("\nCustomer URL: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETURL));
+                    ConfigUtilController.this.setProgress((double)3/12);
+
+                    ConfigUtilController.this.setMsgLabelText("Getting Time Zone from " + ipField.getText());
+                    getInfoStringBuilder.append("\nTime Zone (/etc/TZ): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETTZ));
+                    ConfigUtilController.this.setProgress((double)4/12);
+                    getInfoStringBuilder.append("\nTime Zone (/etc/timezone): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETTIMEZONE));
+                    ConfigUtilController.this.setProgress((double)5/12);
+
+                    ConfigUtilController.this.setMsgLabelText("Getting Mac Address from " + ipField.getText());
+                    getInfoStringBuilder.append("\nMAC Address: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETMAC));
+                    ConfigUtilController.this.setProgress((double)6/12);
                     switch (clock.getModel())
                     {
-                        case "Synergy/X A20":
-                            getInfoStringBuilder.append("\nVolume: " + sshHandler.sendCmdBlocking(clock, Cmds.GETA20VOL));
+                        case "SYnergy/X  / A20":
+                            getInfoStringBuilder.append("\nVolume: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETA20VOL));
+                            break;
+                        case "SYnergy/A 2416":
+                            getInfoStringBuilder.append("\nVolume: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GET2416VOL));
+                            break;
+                        case "SYnergy/A 2410":
+                            getInfoStringBuilder.append("\nVolume: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GET2410VOL));
                             break;
                         default:
                             break;
-
                     }
-                    getInfoStringBuilder.append("\nReader Name: " + sshHandler.sendCmdBlocking(clock, Cmds.GETREADERNAME));
-                    getInfoStringBuilder.append("\nSoftware Update Type: " + sshHandler.sendCmdBlocking(clock, Cmds.GETUPDATETYPE));
-                    getInfoStringBuilder.append("\nWifi Net Type: " + sshHandler.sendCmdBlocking(clock, Cmds.GETWIFINET).replace("address","IP Address:").replace("netmask", "Subnet Mask:").replace("gateway", "Gateway:"));
-                    String temp = sshHandler.sendCmdBlocking(clock, Cmds.GETWIFIDNS);
+                    ConfigUtilController.this.setMsgLabelText("Getting Reader Name from " + ipField.getText());
+                    getInfoStringBuilder.append("\nReader Name: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETREADERNAME));
+                    ConfigUtilController.this.setProgress((double)7/12);
+
+                    ConfigUtilController.this.setMsgLabelText("Getting Software Update Type from " + ipField.getText());
+                    getInfoStringBuilder.append("\nSoftware Update Type: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETUPDATETYPE));
+                    ConfigUtilController.this.setProgress((double)8/12);
+
+                    ConfigUtilController.this.setMsgLabelText("Getting WiFi Network information from " + ipField.getText());
+                    getInfoStringBuilder.append("\nWifi Net Type: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFINET).replace("address","IP Address:").replace("netmask", "Subnet Mask:").replace("gateway", "Gateway:"));
+                    ConfigUtilController.this.setProgress((double)9/12);
+                    String temp = sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFIDNS);
+                    ConfigUtilController.this.setProgress((double)10/12);
                     getInfoStringBuilder.append("\nWiFi DNS Servers: "+ (temp.length() > 2 ? temp:"N/A"));
-                    temp = sshHandler.sendCmdBlocking(clock, Cmds.GETWIFICONF);
+                    temp = sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFICONF);
+                    ConfigUtilController.this.setProgress((double)11/12);
                     getInfoStringBuilder.append("\nWiFi Conf: " + (temp.contains("SSID") ? temp.replace("\n"," "):"NONE"));
 
-                    setProgress(1/12);
+
                 } catch (Exception e) {
                     logger.error("!!ERROR!! "+ e.getLocalizedMessage());
 
                 }
 
-
+            session.disconnect();
+            session = null;
             return getInfoStringBuilder.toString();
         }
 
@@ -343,7 +416,6 @@ public class ConfigUtilController extends AbstractController implements Initiali
             final String res;
             try {
                 res = get();
-                Platform.runLater(() -> {
                 if(res.equals("invalidIPAddress"))
                 {
                     ConfigUtilController.this.setProgress(0);
@@ -355,19 +427,24 @@ public class ConfigUtilController extends AbstractController implements Initiali
                 } else if(res.equals("noIPAddress")) {
                     ConfigUtilController.this.setProgress(0);
                     ConfigUtilController.this.setMsgLabelText("IP address field is empty");
+                }  else if(res.equals("noModelChosen")) {
+                ConfigUtilController.this.setProgress(0);
+                ConfigUtilController.this.setMsgLabelText("No model has been chosen.");
+            } else if(res.equals("badPwd")) {
+                    ConfigUtilController.this.setProgress(0);
+                    ConfigUtilController.this.setMsgLabelText("Incorrect password. Cannot Connect to " + ipField.getText());
                 }else {
                     outputTextArea.setText(res);
                     ConfigUtilController.this.setProgress(1);
                     ConfigUtilController.this.setMsgLabelText("Done getting settings from " + ipField.getText());
                 }
-                });
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private class setInfoAsyncThread extends SwingWorker<String,String>
+    private class setInfoThread extends SwingWorker<String,String>
     {
 
         @Override
@@ -385,24 +462,47 @@ public class ConfigUtilController extends AbstractController implements Initiali
             clock.setIpAddress(ipField.getText());
             clock.setPassword(getPassword(ipField.getText()));
             clock.setModel("Synergy/X A20");
+            ConfigUtilController.this.setProgress(-1);
+            Session session = sshHandler.longConnect(clock);
+
+            ConfigUtilController.this.setProgress(0);
             if (urlField.getText().trim().length() > 0)
             {
-                sshHandler.sendCmdBlocking(clock, Cmds.SETCUSTURL, urlField.getText());
+                ConfigUtilController.this.setProgress(0);
+                ConfigUtilController.this.setMsgLabelText("Setting Customer URL to "+urlField.getText()+" for " + ipField.getText());
+
+                sshHandler.sendCmdBlocking(clock, session, Cmds.SETCUSTURL, urlField.getText());
+                ConfigUtilController.this.setProgress((double)1/14);
             }
             if (ntpField.getText().trim().length() > 0)
             {
-                sshHandler.sendCmdBlocking(clock, Cmds.SETNTPD, "# Get initial time via ntpdate?\\n" +
+                ConfigUtilController.this.setMsgLabelText("Setting NTP to "+ ntpField.getText() +" for " + ipField.getText());
+                sshHandler.sendCmdBlocking(clock, session, Cmds.SETNTPD, "# Get initial time via ntpdate?\\n" +
                         "NTPDATE=yes\\n" +
                         "NTPDATE_OPTS=\\42-t 5\\42\\n" +
                         "# Start the ntp daemon?\\n" +
                         "NTPD=yes\\n" +
                         "# NTP Servers to use for ntpdate\\n" +
                         "NTPSERVERS=\\42" + ntpField.getText());
-                sshHandler.sendCmdBlocking(clock, Cmds.REMOVENTP);
+                ConfigUtilController.this.setProgress((double)2/14);
+                sshHandler.sendCmdBlocking(clock, session, Cmds.REMOVENTP);
+                ConfigUtilController.this.setProgress((double)3/14);
                 for (String server : ntpField.getText().split(" "))
                 {
-                    sshHandler.sendCmdBlocking(clock, Cmds.SETNTP, "server " + server);
+                    sshHandler.sendCmdBlocking(clock, session, Cmds.SETNTP, "server " + server);
                 }
+                ConfigUtilController.this.setProgress((double)4/14);
+
+            }
+            if (tzChoiceBox.getValue() != null)
+            {
+
+                String[] tzVal=tzChoiceBox.getValue().split("-");
+                ConfigUtilController.this.setMsgLabelText("Setting Timezone to "+ (tzVal.length > 3 ? tzVal[2]:tzVal[1])+ "for" + ipField.getText());
+                sshHandler.sendCmdBlocking(clock, session, Cmds.SETTZ, tzVal.length > 3 ? tzVal[2]:tzVal[1]);
+                ConfigUtilController.this.setProgress((double)5/14);
+                sshHandler.sendCmdBlocking(clock, session, Cmds.SETTIMEZONE, tzVal.length > 3 ? tzVal[2]:tzVal[1]);
+                ConfigUtilController.this.setProgress((double)6/14);
 
             }
             if (newPwdField.getText().trim().length() > 0)
@@ -419,26 +519,36 @@ public class ConfigUtilController extends AbstractController implements Initiali
                 {
                     return "invalidMacAddress";
                 }
-                sshHandler.sendCmdBlocking(clock, Cmds.SETMAC, macAddrField.getText().trim());
+                ConfigUtilController.this.setMsgLabelText("Setting MAC Address to "+ macAddrField.getText()+ " for" + ipField.getText());
+                sshHandler.sendCmdBlocking(clock, session, Cmds.SETMAC, macAddrField.getText().trim());
+                ConfigUtilController.this.setProgress((double)7/14);
             }
             if (readerNameField.getText().trim().length() > 0)
             {
-                sshHandler.sendCmdBlocking(clock, Cmds.SETREADERNAME, readerNameField.getText());
+                ConfigUtilController.this.setMsgLabelText("Setting readerName to "+ macAddrField.getText()+ " for" + ipField.getText());
+                sshHandler.sendCmdBlocking(clock, session, Cmds.SETREADERNAME, readerNameField.getText());
+                ConfigUtilController.this.setProgress((double)8/14);
             }
             if (swupdateTypeField.getText().trim().length() > 0)
             {
-                sshHandler.sendCmdBlocking(clock, Cmds.SETUPDATETYPE, swupdateTypeField.getText());
+                ConfigUtilController.this.setMsgLabelText("Setting Software Update Type to "+ macAddrField.getText()+ " for" + ipField.getText());
+                sshHandler.sendCmdBlocking(clock, session, Cmds.SETUPDATETYPE, swupdateTypeField.getText());
+                ConfigUtilController.this.setProgress((double)9/14);
             }
 
             if (wiredCheckBox.isSelected())
             {
                 if(wiredStaticRadio.isSelected())
                 {
-                    sshHandler.sendCmdBlocking(clock, Cmds.SETNETINTERFACES,"eth0", "static", wiredIpField.getText(), wiredSubnetField.getText(), wiredGatewayField.getText());
-                    sshHandler.sendCmdBlocking(clock, Cmds.SETDNS, "eth0", wiredDNSField1.getText(),  wiredDNSField2.getText(),  wiredDNSField3.getText());
+                    ConfigUtilController.this.setMsgLabelText("Setting Static IP to IP: "+wiredIpField.getText()+" Subnet: "+wiredSubnetField.getText()+" Gateway:"+wiredGatewayField.getText()+ " for" + ipField.getText());
+                    sshHandler.sendCmdBlocking(clock, session, Cmds.SETNETINTERFACES,"eth0", "static", wiredIpField.getText(), wiredSubnetField.getText(), wiredGatewayField.getText());
+                    ConfigUtilController.this.setProgress((double)10/14);
+                    sshHandler.sendCmdBlocking(clock, session, Cmds.SETDNS, "eth0", wiredDNSField1.getText(),  wiredDNSField2.getText(),  wiredDNSField3.getText());
+                    ConfigUtilController.this.setProgress((double)11/14);
                 } else if (wiredDHCPRadio.isSelected())
                 {
-                    sshHandler.sendCmdBlocking(clock, Cmds.SETNETINTERFACES,"eth0", "dhcp");
+                    sshHandler.sendCmdBlocking(clock, session, Cmds.SETNETINTERFACES,"eth0", "dhcp");
+                    ConfigUtilController.this.setProgress((double)11/14);
                 }
             }
 
@@ -447,7 +557,7 @@ public class ConfigUtilController extends AbstractController implements Initiali
                 try {
                     if (!ssidField.getText().isEmpty())
                     {
-                        sshHandler.sendCmdBlocking(clock, "echo \"SSID="+ssidField.getText()+"\" > /etc/wifi.conf");
+                        sshHandler.sendCmdBlocking(clock, session, "echo \"SSID="+ssidField.getText()+"\" > /etc/wifi.conf");
                     }
                     if (passphraseField.getText().isEmpty())
                     {
@@ -462,7 +572,7 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
                             Optional<ButtonType> res = alert.showAndWait();
                             if (res.get() == ButtonType.OK) {
-                                sshHandler.sendCmdBlocking(clock, "echo \"PASSPHRASE=\" >> /etc/wifi.conf");
+                                sshHandler.sendCmdBlocking(clock, session, "echo \"PASSPHRASE=\" >> /etc/wifi.conf");
                             }
                         }
 
@@ -478,16 +588,16 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
                             Optional<ButtonType> res = alert.showAndWait();
                             if (res.get() == ButtonType.OK) {
-                                sshHandler.sendCmdBlocking(clock, "echo -e \"SSID=\nPASSPHRASE="+passphraseField.getText()+"\" > /etc/wifi.conf");
+                                sshHandler.sendCmdBlocking(clock, session, "echo -e \"SSID=\nPASSPHRASE="+passphraseField.getText()+"\" > /etc/wifi.conf");
                             }
                         } else {
-                            sshHandler.sendCmdBlocking(clock, "echo \"PASSPHRASE="+passphraseField.getText()+"\" >> /etc/wifi.conf");
+                            sshHandler.sendCmdBlocking(clock, session, "echo \"PASSPHRASE="+passphraseField.getText()+"\" >> /etc/wifi.conf");
                         }
                     }
 
                     if (ssidField.getText().equals("DELETE") && passphraseField.getText().equals("DELETE"))
                     {
-                        sshHandler.sendCmdBlocking(clock, "rm -rf /etc/wifi.conf; rm -rf /etc/wifi.conf.current");
+                        sshHandler.sendCmdBlocking(clock, session, "rm -rf /etc/wifi.conf; rm -rf /etc/wifi.conf.current");
                     }
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
@@ -495,8 +605,10 @@ public class ConfigUtilController extends AbstractController implements Initiali
                 }
                 if (wifiStaticRadio.isSelected()) {
                     try {
-                        sshHandler.sendCmdBlocking(clock, Cmds.SETNETINTERFACES,"wlan0", "static", wifiIpField.getText(), wifiSubnetField.getText(), wifiGatewayField.getText()  );
-                        sshHandler.sendCmdBlocking(clock, Cmds.SETDNS, "wlan0", wifiDNSField1.getText(), wifiDNSField2.getText(), wifiDNSField3.getText());
+                        ConfigUtilController.this.setProgress((double)10/14);
+                        sshHandler.sendCmdBlocking(clock, session, Cmds.SETNETINTERFACES,"wlan0", "static", wifiIpField.getText(), wifiSubnetField.getText(), wifiGatewayField.getText()  );
+                        ConfigUtilController.this.setProgress((double)11/14);
+                        sshHandler.sendCmdBlocking(clock, session, Cmds.SETDNS, "wlan0", wifiDNSField1.getText(), wifiDNSField2.getText(), wifiDNSField3.getText());
 
 
                     } catch (IOException e) {
@@ -506,21 +618,23 @@ public class ConfigUtilController extends AbstractController implements Initiali
                 } else if (wifiDHCPRadio.isSelected()) {
 
                     try {
-                        sshHandler.sendCmdBlocking(clock, Cmds.SETNETINTERFACES,"wlan0", "dhcp");
+                        sshHandler.sendCmdBlocking(clock, session, Cmds.SETNETINTERFACES,"wlan0", "dhcp");
+                        ConfigUtilController.this.setProgress((double)11/14);
                     } catch (IOException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                 }
             }
-            return null;
+            session.disconnect();
+            session = null;
+            return "success";
         }
 
         @Override
         protected void done() {
             try {
                 String res = get();
-                Platform.runLater(()->{
                 if(res.equals("invalidIPAddress"))
                 {
                     ConfigUtilController.this.setProgress(0);
@@ -536,13 +650,12 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
                     try {
                         ConfigUtilController.this.setProgress(1);
-                        ConfigUtilController.this.setMsgLabelText("Done getting settings from " +ipField.getText());
+                        ConfigUtilController.this.setMsgLabelText("Done updating settings for " +ipField.getText());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
 
                 }
-                });
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {

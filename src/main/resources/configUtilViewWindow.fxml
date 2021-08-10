@@ -42,7 +42,7 @@
             <TextField fx:id="ipField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             <TextField fx:id="curPwdField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
             <TextField fx:id="ntpField" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-            <ChoiceBox fx:id="tzChoiceBox" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+            <ChoiceBox fx:id="tzChoiceBox" prefHeight="26.0" prefWidth="526.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
             <TextField fx:id="newPwdField" GridPane.columnIndex="1" GridPane.rowIndex="6" />
             <TextField fx:id="volField" GridPane.columnIndex="1" GridPane.rowIndex="7" />
             <TextField fx:id="macAddrField" GridPane.columnIndex="1" GridPane.rowIndex="8" />
@@ -144,7 +144,7 @@
          <children>
             <Button fx:id="clearBtn" mnemonicParsing="false" onAction="#clear" prefWidth="115.0" text="Clear" />
             <Button fx:id="getSettingsBtn" mnemonicParsing="false" onAction="#getInfo" prefWidth="115.0" text="Get Settings" GridPane.columnIndex="1" />
-            <Button fx:id="applySettingsBtn" mnemonicParsing="false" prefWidth="115.0" text="Apply Settings" GridPane.columnIndex="2" />
+            <Button fx:id="applySettingsBtn" mnemonicParsing="false" onAction="#setInfo" prefWidth="115.0" text="Apply Settings" GridPane.columnIndex="2" />
          </children>
       </GridPane>
       <ProgressBar fx:id="progressBar" layoutX="300.0" layoutY="926.0" prefWidth="200.0" progress="0.0" />

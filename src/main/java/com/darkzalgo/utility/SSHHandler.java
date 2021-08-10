@@ -43,29 +43,39 @@ public class SSHHandler
 
     private ExecutorService cmdThreadPool = Executors.newFixedThreadPool((int) (cores*1.5));
 
-    private Pattern pattern;
-    private Matcher matcher;
-
-    private static final String IPADDRESS_PATTERN =
-            "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
-
-
-
     public boolean isIpValid(final String ip){
-        matcher = pattern.matcher(ip);
+        Pattern pattern = Pattern.compile( "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+        Matcher matcher = pattern.matcher(ip);
         System.out.println("IP: " + ip + "IP is Valid: " +matcher.matches());
         return matcher.matches();
     }
     public boolean isValidMAC(String mac) {
-        pattern = Pattern.compile("^([0-9A-Fa-f]{2}[\\.:-]){5}([0-9A-Fa-f]{2})$");
-        matcher = pattern.matcher(mac);
+        Pattern pattern = Pattern.compile("^([0-9A-Fa-f]{2}[\\.:-]){5}([0-9A-Fa-f]{2})$");
+        Matcher matcher = pattern.matcher(mac);
         return matcher.find();
     }
 
-
+    public Session longConnect(TimeClock timeClock) throws JSchException {
+        Session session = null;
+        String password = timeClock.getPassword();
+        int port = timeClock.getPort();
+        String user = timeClock.getUsername();
+        String host = timeClock.getIpAddress();
+        if (password.matches(".*[ẞßäÄüÜöÖ].*"))
+        {
+            password = new String (password.getBytes(), StandardCharsets.ISO_8859_1);
+        }
+        session = new JSch().getSession(user, host, port);
+        session.setPassword(password);
+        session.setConfig("StrictHostKeyChecking", "no");
+        session.setConfig("PreferredAuthentications", "password");
+        session.setConfig("MaxAuthTries", "3");
+        session.connect(5000);
+        return session;
+    }
 
     public void ConnectController(AbstractController controller)
     {
@@ -77,11 +87,9 @@ public class SSHHandler
     public SSHHandler(AbstractController controller)
     {
         ConnectController(controller);
-        pattern = Pattern.compile(IPADDRESS_PATTERN);
     }
     public SSHHandler()
     {
-        pattern = Pattern.compile(IPADDRESS_PATTERN);
     }
     private Session connect(TimeClock timeClock)
     {
@@ -93,10 +101,7 @@ public class SSHHandler
         String host = timeClock.getIpAddress();
         logger.info("Attempting to connect to to " + user + "@" + host + ":" + port + "...");
         sendResultMsg("Connecting to " + host);
-        if (password.matches(".*[ẞßäÄüÜöÖ].*"))
-        {
-            password = new String (password.getBytes(), StandardCharsets.ISO_8859_1);
-        }
+
         try {
             session = new JSch().getSession(user, host, port);
             logger.info("Using Password\t"+password);
@@ -106,7 +111,7 @@ public class SSHHandler
             session.setConfig("MaxAuthTries", "3");
 
 
-                session.connect(5000);
+            session.connect(5000);
 
 
             logger.info("Successfully connected to " + user + "@" + host + ":" + port);
@@ -235,14 +240,13 @@ public class SSHHandler
         cmdThreadPool.submit(singleCommandTask);
     }
 
-    public String sendCmdBlocking(TimeClock clock, String cmd ) throws JSchException, IOException, InterruptedException
+    public String sendCmdBlocking(TimeClock clock, Session session, String cmd ) throws JSchException, IOException, InterruptedException
     {
-        logger.info("STARTING SENDCMDBLOCKING");
             int port = clock.getPort();
             String user = clock.getUsername();
             String host = clock.getIpAddress();
 
-            Session session = connect(clock);
+//            Session session = connect(clock);
             Channel channel = session.openChannel("exec");
 
             StringBuilder cmdOutput = new StringBuilder();
@@ -250,7 +254,6 @@ public class SSHHandler
             ((ChannelExec) channel).setCommand(cmd);
 
             InputStream cmdStream = channel.getInputStream();
-            sendResultMsg("Sending command " + cmd + " to " + user + "@" + host + ":" + port);
             logger.info("Sending command " + cmd + " to " + user + "@" + host + ":" + port);
             channel.connect();
 
@@ -262,14 +265,12 @@ public class SSHHandler
                 readByte = cmdStream.read();
             }
 
-            sendResultMsg("Received command output: " + cmdOutput.toString());
             channel.disconnect();
-            disconnect(session);
             return cmdOutput.toString().trim();
 
     }
-    public String sendCmdBlocking(TimeClock clock, Cmds cmd, String... strings) throws JSchException, IOException, InterruptedException {
-       return sendCmdBlocking(clock, getCmd(cmd, strings));
+    public String sendCmdBlocking(TimeClock clock, Session session, Cmds cmd, String... strings) throws JSchException, IOException, InterruptedException {
+       return sendCmdBlocking(clock,  session, getCmd(cmd, strings));
     }
 
 
@@ -523,7 +524,7 @@ public class SSHHandler
                 command = "cat /etc/timezone";
                 break;
             case GETMAC:
-                command = "ifconfig eth0 | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}'";
+                command = "cat /etc/mac.txt";
                 break;
             case GETNETINTERFACES:
                 command = "cat /etc/network/interfaces";
@@ -608,7 +609,7 @@ public class SSHHandler
                 command = "sed -r 's|wbsynch.webservice.url.*|wbsynch.webservice.url = "+strings[0]+"|' -i /home/admin/wbcs/conf/settings.conf";
                 break;
             case SETMAC:
-                command = "awk \"BEGIN { print "+"\\"+"\""+strings[0]+"\\"+"\" }\" > /etc/mac.txt";
+                command = "echo \""+strings[0]+"\" > /etc/mac.txt";
                 break;
             case SETNTPD:
                 command = "awk \"BEGIN { print "+"\\"+"\""+ strings[0] +"\\42" +"\\"+"\" }\" > /etc/default/ntpd";
