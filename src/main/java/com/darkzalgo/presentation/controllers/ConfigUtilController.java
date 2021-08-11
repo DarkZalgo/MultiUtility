@@ -107,7 +107,6 @@ public class ConfigUtilController extends AbstractController implements Initiali
         modelChoiceBox.getItems().add("SYnergy/X  / A20");
         modelChoiceBox.getItems().add("SYnergy/A 2416");
         modelChoiceBox.getItems().add("SYnergy/A 2410");
-        logger.info("CUR TZ CHOICE VALUE IS " + tzChoiceBox.getValue());
 
         Context.getInstance().setConfigController(this);
 
@@ -279,9 +278,10 @@ public class ConfigUtilController extends AbstractController implements Initiali
         outputTextArea.clear();
         setProgress(0);
         setMsgLabelText("");
-        String[] tzVal=tzChoiceBox.getValue().split("-");
-        logger.info("CURRENT TZ CHOICE" + (tzVal.length > 3 ? tzVal[2]:tzVal[1]));
-        logger.info("TZ VAL LENGTH" + tzChoiceBox.getValue().split("-").length);
+        TimeClock clock = new TimeClock();
+        clock.setIpAddress("192.168.4.50");
+        clock.setPassword("$ynEL88RVER");
+
 
     }
 
@@ -404,9 +404,11 @@ public class ConfigUtilController extends AbstractController implements Initiali
                 } catch (Exception e) {
                     logger.error("!!ERROR!! "+ e.getLocalizedMessage());
 
+                } finally{
+                    session.disconnect();
                 }
 
-            session.disconnect();
+
             session = null;
             return getInfoStringBuilder.toString();
         }

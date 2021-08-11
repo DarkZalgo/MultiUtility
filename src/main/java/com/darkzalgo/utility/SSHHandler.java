@@ -791,14 +791,9 @@ public class SSHHandler
                 }
 
                 channel.disconnect();
-                if(cmds[0].contains("configUtilCmds"))
-                {
-                    switch(i){
 
-                    }
-                } else {
                     cmdOutput[i] = cmdOutputBuilder.toString();
-                }
+
             }
             showProgress(1);
 

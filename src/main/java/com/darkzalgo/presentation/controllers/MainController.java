@@ -401,7 +401,7 @@ public class MainController extends AbstractController implements Initializable
         configUtilViewStage.initOwner(primaryWindow);
 
         configUtilViewStage.setX(primaryWindow.getX() + 200);
-        configUtilViewStage.setY(primaryWindow.getY() + 100);
+        configUtilViewStage.setY(primaryWindow.getY());
 
         configUtilViewStage.setResizable(false);
 
@@ -426,7 +426,7 @@ public class MainController extends AbstractController implements Initializable
         stressTestViewStage.initOwner(primaryWindow);
 
         stressTestViewStage.setX(primaryWindow.getX() + 200);
-        stressTestViewStage.setY(primaryWindow.getY() + 100);
+        stressTestViewStage.setY(primaryWindow.getY());
 
         stressTestViewStage.setResizable(false);
 
