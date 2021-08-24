@@ -20,6 +20,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Scale;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -403,7 +404,7 @@ public class MainController extends AbstractController implements Initializable
         configUtilViewStage.setX(primaryWindow.getX() + 200);
         configUtilViewStage.setY(primaryWindow.getY());
 
-        configUtilViewStage.setResizable(false);
+//        configUtilViewStage.setResizable(false);
 
         configUtilViewStage.show();
 
@@ -419,6 +420,7 @@ public class MainController extends AbstractController implements Initializable
         stressTestViewRoot.setStyle(node.getScene().getRoot().getStyle());
         stressTestViewStage.setTitle("Stress Test");
         stressTestViewStage.setScene(stressTestViewScene);
+
 //        stressTestViewStage.initModality(Modality.WINDOW_MODAL);
 
         Window primaryWindow = node.getScene().getWindow();
@@ -428,9 +430,21 @@ public class MainController extends AbstractController implements Initializable
         stressTestViewStage.setX(primaryWindow.getX() + 200);
         stressTestViewStage.setY(primaryWindow.getY());
 
-        stressTestViewStage.setResizable(false);
+//        stressTestViewStage.setResizable(false);
+
+        stressTestViewStage.setMinHeight(750);
+        stressTestViewStage.setMinWidth(500);
+        stressTestViewStage.setMaxHeight(1200);
+        stressTestViewStage.setMaxWidth(950);
+//        ((GridPane)stressTestViewScene.getRoot()).getChildren().forEach(child->{
+//           child.setScaleX(1.25);
+//           child.setScaleY(1.25);
+//        });
+//        ((GridPane)stressTestViewScene.getRoot()).setScaleY(1.25);
 
         stressTestViewStage.show();
+
+        letterbox(stressTestViewScene, (GridPane)stressTestViewScene.getRoot());
 
     }
 
@@ -571,6 +585,56 @@ public class MainController extends AbstractController implements Initializable
         }
 
         return password;
+    }
+
+    public class SceneSizeChangeListener implements ChangeListener<Number>
+    {
+        private final Scene scene;
+        private final double ratio;
+        private final double initHeight;
+        private final double initWidth;
+        private final GridPane contentPane;
+
+        public SceneSizeChangeListener(Scene scene, double ratio, double initHeight, double initWidth, GridPane contentPane) {
+            this.scene = scene;
+            this.ratio = ratio;
+            this.initHeight = initHeight;
+            this.initWidth = initWidth;
+            this.contentPane = contentPane;
+        }
+
+        @Override
+        public void changed(ObservableValue<? extends Number> observableValue, Number oldValue, Number newValue) {
+            final double newWidth = scene.getWidth();
+            final double newHeight = scene.getHeight();
+
+            double scaleFactor =
+                    newWidth / newHeight > ratio
+                            ? newHeight / initHeight
+                            : newWidth / initWidth;
+
+            if (scaleFactor >= 1) {
+                Scale scale = new Scale(scaleFactor, scaleFactor);
+                scale.setPivotX(0);
+                scale.setPivotY(0);
+                contentPane.getTransforms().setAll(scale);
+                contentPane.setPrefWidth(newWidth / scaleFactor);
+                contentPane.setPrefHeight(newHeight / scaleFactor);
+            } else {
+                contentPane.setPrefWidth(Math.max(initWidth, newWidth));
+                contentPane.setPrefHeight(Math.max(initHeight, newHeight));
+            }
+        }
+    }
+
+    private void letterbox(final Scene scene, final GridPane contentPane) {
+        final double initWidth  = scene.getWidth();
+        final double initHeight = scene.getHeight();
+        final double ratio      = initWidth / initHeight;
+
+        SceneSizeChangeListener sizeListener = new SceneSizeChangeListener(scene, ratio, initHeight, initWidth, contentPane);
+        scene.widthProperty().addListener(sizeListener);
+        scene.heightProperty().addListener(sizeListener);
     }
 
 }

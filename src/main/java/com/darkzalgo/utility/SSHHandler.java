@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -64,10 +66,10 @@ public class SSHHandler
         int port = timeClock.getPort();
         String user = timeClock.getUsername();
         String host = timeClock.getIpAddress();
-        if (password.matches(".*[ẞßäÄüÜöÖ].*"))
-        {
-            password = new String (password.getBytes(), StandardCharsets.ISO_8859_1);
-        }
+
+        password = new String (password.getBytes(), StandardCharsets.UTF_8);
+        logger.info("Sending password " + password);
+
         session = new JSch().getSession(user, host, port);
         session.setPassword(password);
         session.setConfig("StrictHostKeyChecking", "no");
@@ -156,7 +158,7 @@ public class SSHHandler
                             logger.info("Using Password: "+password);
                             if (password.matches(".*[ẞßäÄüÜöÖ].*"))
                             {
-                                password = new String (password.getBytes(), StandardCharsets.ISO_8859_1);
+                                password = new String (password.getBytes(), StandardCharsets.UTF_8);
                             }
                             session.setPassword(password);
                             session.setConfig("StrictHostKeyChecking", "no");
@@ -266,7 +268,9 @@ public class SSHHandler
             }
 
             channel.disconnect();
-            return cmdOutput.toString().trim();
+
+            String res = new String(cmdOutput.toString().getBytes(StandardCharsets.UTF_8));
+            return res.trim();
 
     }
     public String sendCmdBlocking(TimeClock clock, Session session, Cmds cmd, String... strings) throws JSchException, IOException, InterruptedException {
@@ -687,6 +691,15 @@ public class SSHHandler
     {
         SFTPHandlerThread sftpTask = new SFTPHandlerThread(clock, args);
         cmdThreadPool.submit(sftpTask);
+    }
+
+    public boolean isInforClock(TimeClock clock) throws JSchException, IOException, InterruptedException {
+        String res = sendCmdBlocking(clock, connect(clock),"if [ -d /home/admin/wbcs ]; then echo \"Infor\" ; else echo \"Not Infor\"; fi");
+        if (res !=null)
+        {
+            return res.equals("Infor");
+        }
+        return false;
     }
 
     private class SingleCommandHandlerThread extends Task<String>

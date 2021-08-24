@@ -4,17 +4,16 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<Pane prefHeight="975.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.darkzalgo.presentation.controllers.StressTestController">
-   <children>
-      <GridPane layoutX="64.0" layoutY="75.0" prefHeight="488.0" prefWidth="398.0" scaleX="1.25" scaleY="1.25">
+<GridPane maxHeight="1200.0" maxWidth="950.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.darkzalgo.presentation.controllers.StressTestController">
+    <GridPane layoutX="64.0" layoutY="75.0" GridPane.rowIndex="0">
         <columnConstraints>
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -24,148 +23,179 @@
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
-         <children>
-            <Label text="Select IP Prefix " GridPane.halignment="RIGHT" />
-            <Label text="Select a Reader " GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-            <Label text="Clock Password " GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
-            <Button mnemonicParsing="false" text="Push Test" GridPane.halignment="RIGHT" GridPane.rowIndex="3" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin></Button>
-            <Button mnemonicParsing="false" text="Remove Test" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="3" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin></Button>
-            <Button mnemonicParsing="false" text="Get Settings" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="4" />
-            <Button mnemonicParsing="false" text="Probe Test Bench" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="5" GridPane.valignment="CENTER" />
-            <ChoiceBox fx:id="selectIPCBox" prefWidth="150.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
-            <ChoiceBox fx:id="selectReaderCBox" prefWidth="150.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
-            <TextField fx:id="stClockPwdField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <RadioButton fx:id="onStressTestRadio" mnemonicParsing="false" text="On Stress Test" GridPane.halignment="RIGHT" GridPane.rowIndex="6">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin>
-            </RadioButton>
-            <RadioButton fx:id="offStressTestRadio" mnemonicParsing="false" text="Off Stress Test" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="6">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin>
-            </RadioButton>
-            <RadioButton fx:id="allInforRadio" mnemonicParsing="false" text="All Infor Clocks" GridPane.halignment="RIGHT" GridPane.rowIndex="7">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin>
-            </RadioButton>
-            <RadioButton fx:id="customGroupRadio" mnemonicParsing="false" text="Custom Group" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="7">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin>
-            </RadioButton>
-            <Button mnemonicParsing="false" onAction="#gogo" text="Pause Test" GridPane.halignment="RIGHT" GridPane.rowIndex="8">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin>
-            </Button>
-            <Button mnemonicParsing="false" text="Reboot All" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="8">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin>
-            </Button>
-            <Button mnemonicParsing="false" text="Push To All Probed" GridPane.halignment="RIGHT" GridPane.rowIndex="9">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin>
-            </Button>
-            <Button mnemonicParsing="false" text="Remove From All Probed" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="9">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin>
-            </Button>
-            <Button mnemonicParsing="false" text="Save Results To File" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="10" GridPane.valignment="CENTER" />
-         </children>
-      </GridPane>
-      <TextArea editable="false" layoutX="537.0" layoutY="16.0" prefHeight="610.0" prefWidth="249.0" />
-      <GridPane layoutX="82.0" layoutY="685.0" prefHeight="242.0" prefWidth="631.0" scaleX="1.25" scaleY="1.25">
+        <Label text="Select IP Prefix " GridPane.halignment="RIGHT" />
+        <Label text="Select a Reader " GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+        <Label text="Clock Password " GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+        <Button mnemonicParsing="false" text="Push Test" GridPane.halignment="RIGHT" GridPane.rowIndex="3" GridPane.valignment="CENTER">
+            <GridPane.margin>
+                <Insets right="5.0" />
+            </GridPane.margin>
+        </Button>
+        <Button mnemonicParsing="false" text="Remove Test" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="3" GridPane.valignment="CENTER">
+            <GridPane.margin>
+                <Insets left="5.0" />
+            </GridPane.margin>
+        </Button>
+        <Button mnemonicParsing="false" text="Get Settings" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="4" />
+        <Button mnemonicParsing="false" text="Probe Test Bench" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="5" GridPane.valignment="CENTER" />
+        <ChoiceBox fx:id="selectIPCBox" prefWidth="150.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+        <ChoiceBox fx:id="selectReaderCBox" prefWidth="150.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
+        <TextField fx:id="stClockPwdField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+        <RadioButton fx:id="onStressTestRadio" mnemonicParsing="false" text="On Stress Test" GridPane.halignment="RIGHT" GridPane.rowIndex="6">
+            <GridPane.margin>
+                <Insets right="5.0" />
+            </GridPane.margin>
+        </RadioButton>
+        <RadioButton fx:id="offStressTestRadio" mnemonicParsing="false" text="Off Stress Test" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="6">
+            <GridPane.margin>
+                <Insets left="5.0" />
+            </GridPane.margin>
+        </RadioButton>
+        <RadioButton fx:id="allInforRadio" mnemonicParsing="false" text="All Infor Clocks" GridPane.halignment="RIGHT" GridPane.rowIndex="7">
+            <GridPane.margin>
+                <Insets right="5.0" />
+            </GridPane.margin>
+        </RadioButton>
+        <RadioButton fx:id="customGroupRadio" mnemonicParsing="false" text="Custom Group" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="7">
+            <GridPane.margin>
+                <Insets left="5.0" />
+            </GridPane.margin>
+        </RadioButton>
+        <Button mnemonicParsing="false" onAction="#gogo" text="Pause Test" GridPane.halignment="RIGHT" GridPane.rowIndex="8">
+            <GridPane.margin>
+                <Insets right="5.0" />
+            </GridPane.margin>
+        </Button>
+        <Button mnemonicParsing="false" text="Reboot All" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="8">
+            <GridPane.margin>
+                <Insets left="5.0" />
+            </GridPane.margin>
+        </Button>
+        <Button mnemonicParsing="false" text="Push To All Probed" GridPane.halignment="RIGHT" GridPane.rowIndex="9">
+            <GridPane.margin>
+                <Insets right="5.0" />
+            </GridPane.margin>
+        </Button>
+        <Button mnemonicParsing="false" text="Remove From All Probed" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="9">
+            <GridPane.margin>
+                <Insets left="5.0" />
+            </GridPane.margin>
+        </Button>
+        <Button mnemonicParsing="false" text="Save Results To File" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="10" GridPane.valignment="CENTER" />
+        <GridPane.margin>
+            <Insets right="5.0" top="5.0" />
+        </GridPane.margin>
+    </GridPane>
+    <TextArea editable="false" layoutX="537.0" layoutY="16.0" prefHeight="610.0" prefWidth="249.0" GridPane.columnIndex="2" GridPane.columnSpan="2147483647">
+      <GridPane.margin>
+         <Insets right="5.0" top="5.0" />
+      </GridPane.margin></TextArea>
+    <GridPane layoutX="82.0" layoutY="685.0" minHeight="10.0" minWidth="10.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="2">
         <columnConstraints>
-            <ColumnConstraints halignment="CENTER" maxWidth="310.20001220703125" minWidth="10.0" prefWidth="106.199951171875" />
-          <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" maxWidth="557.6000061035156" minWidth="10.0" prefWidth="524.800048828125" />
+            <ColumnConstraints halignment="CENTER" maxWidth="310.20001220703125" minWidth="40.0" prefWidth="106.199951171875" />
+            <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" maxWidth="557.6000061035156" minWidth="10.0" prefWidth="524.800048828125" />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
-         <children>
-            <Label fx:id="outputLbl1" maxWidth="520.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin></Label>
-            <Label fx:id="outputLbl2" maxWidth="520.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin></Label>
-            <Label fx:id="outputLbl3" maxWidth="520.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="2" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin></Label>
-            <Label fx:id="outputLbl4" maxWidth="520.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="3" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin></Label>
-            <Label fx:id="outputLbl5" maxWidth="520.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="4" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin></Label>
-            <Label fx:id="outputLbl6" maxWidth="520.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="5" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin></Label>
-            <Label fx:id="outputLbl7" maxWidth="520.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="6" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin></Label>
-            <Label fx:id="outputLbl8" maxWidth="520.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="7" GridPane.valignment="CENTER">
-               <GridPane.margin>
-                  <Insets left="5.0" />
-               </GridPane.margin></Label>
-            <ProgressBar fx:id="progressBar1" prefWidth="100.0" progress="0.0">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin></ProgressBar>
-            <ProgressBar fx:id="progressBar2" prefWidth="100.0" progress="0.0" GridPane.rowIndex="1">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin></ProgressBar>
-            <ProgressBar fx:id="progressBar3" prefWidth="100.0" progress="0.0" GridPane.rowIndex="2">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin></ProgressBar>
-            <ProgressBar fx:id="progressBar4" prefWidth="100.0" progress="0.0" GridPane.rowIndex="3">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin></ProgressBar>
-            <ProgressBar fx:id="progressBar5" prefWidth="100.0" progress="0.0" GridPane.rowIndex="4">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin></ProgressBar>
-            <ProgressBar fx:id="progressBar6" prefWidth="100.0" progress="0.0" GridPane.rowIndex="5">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin></ProgressBar>
-            <ProgressBar fx:id="progressBar7" prefWidth="100.0" progress="0.0" GridPane.rowIndex="6">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin></ProgressBar>
-            <ProgressBar fx:id="progressBar8" prefWidth="100.0" progress="0.0" GridPane.rowIndex="7">
-               <GridPane.margin>
-                  <Insets right="5.0" />
-               </GridPane.margin></ProgressBar>
-         </children>
-      </GridPane>
-   </children>
-</Pane>
+        <children>
+            <Label fx:id="outputLbl1" maxWidth="520.0" minHeight="10.0" minWidth="10.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.valignment="CENTER">
+                <GridPane.margin>
+                    <Insets left="5.0" />
+                </GridPane.margin>
+            </Label>
+            <Label fx:id="outputLbl2" maxWidth="520.0" minHeight="10.0" minWidth="10.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+                <GridPane.margin>
+                    <Insets left="5.0" />
+                </GridPane.margin>
+            </Label>
+            <Label fx:id="outputLbl3" maxWidth="520.0" minHeight="10.0" minWidth="10.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="2" GridPane.valignment="CENTER">
+                <GridPane.margin>
+                    <Insets left="5.0" />
+                </GridPane.margin>
+            </Label>
+            <Label fx:id="outputLbl4" maxWidth="520.0" minHeight="10.0" minWidth="10.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="3" GridPane.valignment="CENTER">
+                <GridPane.margin>
+                    <Insets left="5.0" />
+                </GridPane.margin>
+            </Label>
+            <Label fx:id="outputLbl5" maxWidth="520.0" minHeight="10.0" minWidth="10.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="4" GridPane.valignment="CENTER">
+                <GridPane.margin>
+                    <Insets left="5.0" />
+                </GridPane.margin>
+            </Label>
+            <Label fx:id="outputLbl6" maxWidth="520.0" minHeight="10.0" minWidth="10.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="5" GridPane.valignment="CENTER">
+                <GridPane.margin>
+                    <Insets left="5.0" />
+                </GridPane.margin>
+            </Label>
+            <Label fx:id="outputLbl7" maxWidth="520.0" minHeight="10.0" minWidth="10.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="6" GridPane.valignment="CENTER">
+                <GridPane.margin>
+                    <Insets left="5.0" />
+                </GridPane.margin>
+            </Label>
+            <Label fx:id="outputLbl8" maxWidth="520.0" minHeight="10.0" minWidth="10.0" text="" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="7" GridPane.valignment="CENTER">
+                <GridPane.margin>
+                    <Insets left="5.0" />
+                </GridPane.margin>
+            </Label>
+            <ProgressBar fx:id="progressBar1" minHeight="10.0" minWidth="40.0" prefWidth="100.0" progress="0.0">
+                <GridPane.margin>
+                    <Insets right="5.0" />
+                </GridPane.margin>
+            </ProgressBar>
+            <ProgressBar fx:id="progressBar2" minHeight="10.0" minWidth="40.0" prefWidth="100.0" progress="0.0" GridPane.rowIndex="1">
+                <GridPane.margin>
+                    <Insets right="5.0" />
+                </GridPane.margin>
+            </ProgressBar>
+            <ProgressBar fx:id="progressBar3" minHeight="10.0" minWidth="40.0" prefWidth="100.0" progress="0.0" GridPane.rowIndex="2">
+                <GridPane.margin>
+                    <Insets right="5.0" />
+                </GridPane.margin>
+            </ProgressBar>
+            <ProgressBar fx:id="progressBar4" minHeight="10.0" minWidth="40.0" prefWidth="100.0" progress="0.0" GridPane.rowIndex="3">
+                <GridPane.margin>
+                    <Insets right="5.0" />
+                </GridPane.margin>
+            </ProgressBar>
+            <ProgressBar fx:id="progressBar5" minHeight="10.0" minWidth="40.0" prefWidth="100.0" progress="0.0" GridPane.rowIndex="4">
+                <GridPane.margin>
+                    <Insets right="5.0" />
+                </GridPane.margin>
+            </ProgressBar>
+            <ProgressBar fx:id="progressBar6" minHeight="10.0" minWidth="40.0" prefWidth="100.0" progress="0.0" GridPane.rowIndex="5">
+                <GridPane.margin>
+                    <Insets right="5.0" />
+                </GridPane.margin>
+            </ProgressBar>
+            <ProgressBar fx:id="progressBar7" minHeight="10.0" minWidth="40.0" prefWidth="100.0" progress="0.0" GridPane.rowIndex="6">
+                <GridPane.margin>
+                    <Insets right="5.0" />
+                </GridPane.margin>
+            </ProgressBar>
+            <ProgressBar fx:id="progressBar8" minHeight="10.0" minWidth="40.0" prefWidth="100.0" progress="0.0" GridPane.rowIndex="7">
+                <GridPane.margin>
+                    <Insets right="5.0" />
+                </GridPane.margin>
+            </ProgressBar>
+        </children>
+    </GridPane>
+    <columnConstraints>
+        <ColumnConstraints maxWidth="376.0" minWidth="156.0" prefWidth="354.0" />
+        <ColumnConstraints maxWidth="267.0" minWidth="0.0" prefWidth="46.0" />
+        <ColumnConstraints maxWidth="376.0" minWidth="158.0" prefWidth="232.0" />
+    </columnConstraints>
+    <rowConstraints>
+        <RowConstraints maxHeight="674.0" minHeight="494.0" prefHeight="605.0" />
+        <RowConstraints maxHeight="421.0" minHeight="9.0" prefHeight="15.0" />
+        <RowConstraints maxHeight="421.0" minHeight="176.0" prefHeight="415.0" />
+    </rowConstraints>
+</GridPane>

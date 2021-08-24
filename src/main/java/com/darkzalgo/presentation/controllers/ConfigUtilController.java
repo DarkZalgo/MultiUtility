@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -145,7 +146,14 @@ public class ConfigUtilController extends AbstractController implements Initiali
                 {
                     for (RadioButton tmpRadio: wifiRadioSet)
                         tmpRadio.setVisible(true);
+
                     wifiDHCPRadio.fire();
+
+                    ssidField.setVisible(true);
+                    passphraseField.setVisible(true);
+
+                    ssidLbl.setVisible(true);
+                    passphraseLbl.setVisible(true);
 
                 } else {
                     for (RadioButton tmpRadio: wifiRadioSet) {
@@ -196,11 +204,16 @@ public class ConfigUtilController extends AbstractController implements Initiali
                 {
                     for(TextField tempField: wifiFieldSet)
                     {
-                        tempField.setVisible(false);
-                        tempField.clear();
+                        if (tempField!= ssidField && tempField !=passphraseField) {
+                            tempField.setVisible(false);
+                            tempField.clear();
+                        }
                     }
                     for (Label tmpLbl : wifiLabelSet)
-                        tmpLbl.setVisible(false);
+                        if (tmpLbl != ssidLbl && tmpLbl != passphraseLbl) {
+                            tmpLbl.setVisible(false);
+                        }
+
                 }
                 if  (wifiNetInfoGroup.getSelectedToggle() == wifiStaticRadio)
                 {
@@ -308,6 +321,11 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
     }
 
+    private void showAlertMsg()
+    {
+
+    }
+
     private class getInfoThread extends SwingWorker<String, String>
     {
         @Override
@@ -347,7 +365,10 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
                 try {
                     ConfigUtilController.this.setProgress(0);
-
+                    if(!sshHandler.isInforClock(clock))
+                    {
+                        return "notInfor";
+                    }
                     ConfigUtilController.this.setMsgLabelText("Getting NTP servers from " + ipField.getText());
                     getInfoStringBuilder.append("NTP Servers (/etc/default/ntpd): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETNTPD));
                     ConfigUtilController.this.setProgress((double)1/12);
@@ -435,6 +456,9 @@ public class ConfigUtilController extends AbstractController implements Initiali
             } else if(res.equals("badPwd")) {
                     ConfigUtilController.this.setProgress(0);
                     ConfigUtilController.this.setMsgLabelText("Incorrect password. Cannot Connect to " + ipField.getText());
+                } else if(res.equals("notInfor")) {
+                    ConfigUtilController.this.setProgress(0);
+                    ConfigUtilController.this.setMsgLabelText( ipField.getText() + " is not an Infor clock");
                 }else {
                     outputTextArea.setText(res);
                     ConfigUtilController.this.setProgress(1);
@@ -468,6 +492,10 @@ public class ConfigUtilController extends AbstractController implements Initiali
             Session session = sshHandler.longConnect(clock);
 
             ConfigUtilController.this.setProgress(0);
+            if(!sshHandler.isInforClock(clock))
+            {
+                return "notInfor";
+            }
             if (urlField.getText().trim().length() > 0)
             {
                 ConfigUtilController.this.setProgress(0);
@@ -557,29 +585,33 @@ public class ConfigUtilController extends AbstractController implements Initiali
             if (wifiCheckBox.isSelected())
             {
                 try {
-                    if (!ssidField.getText().isEmpty())
-                    {
-                        sshHandler.sendCmdBlocking(clock, session, "echo \"SSID="+ssidField.getText()+"\" > /etc/wifi.conf");
-                    }
+
                     if (passphraseField.getText().isEmpty())
                     {
                         if (!ssidField.getText().isEmpty()) {
-                            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                            alert.setTitle("WiFi Change Confirmation");
-                            alert.setHeaderText("Passphrase field is empty. Change anyway?");
-                            //alert.setContentText("From\n" + cell.getOldValue() + "To\n" + cell.getNewValue() + "\nOn IP " + currentCellProperties.getIpAddress());
-                            alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
-                            alert.getDialogPane().setMinWidth(Region.USE_PREF_SIZE);
+                           boolean confirm = CompletableFuture.supplyAsync(()->{
+                                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                                alert.setTitle("WiFi Change Confirmation");
+                                alert.setHeaderText("Passphrase field is empty. Change anyway?");
+                                //alert.setContentText("From\n" + cell.getOldValue() + "To\n" + cell.getNewValue() + "\nOn IP " + currentCellProperties.getIpAddress());
+                                alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+                                alert.getDialogPane().setMinWidth(Region.USE_PREF_SIZE);
 
 
-                            Optional<ButtonType> res = alert.showAndWait();
-                            if (res.get() == ButtonType.OK) {
+                                Optional<ButtonType> res = alert.showAndWait();
+                                return res.get()==ButtonType.OK;
+
+                            },Platform::runLater).join();
+
+                            if (confirm) {
+                                sshHandler.sendCmdBlocking(clock, session, "echo \"SSID="+ssidField.getText()+"\" > /etc/wifi.conf");
                                 sshHandler.sendCmdBlocking(clock, session, "echo \"PASSPHRASE=\" >> /etc/wifi.conf");
                             }
                         }
 
                     } else {
                         if (ssidField.getText().isEmpty()) {
+                            boolean confirm = CompletableFuture.supplyAsync(()->{
                             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                             alert.setTitle("WiFi Change Confirmation");
                             alert.setHeaderText("SSID field is empty, but Passphrase field is not. Change anyway?");
@@ -589,10 +621,13 @@ public class ConfigUtilController extends AbstractController implements Initiali
 
 
                             Optional<ButtonType> res = alert.showAndWait();
-                            if (res.get() == ButtonType.OK) {
+                            return res.get()==ButtonType.OK;
+                            },Platform::runLater).join();
+                            if (confirm) {
                                 sshHandler.sendCmdBlocking(clock, session, "echo -e \"SSID=\nPASSPHRASE="+passphraseField.getText()+"\" > /etc/wifi.conf");
                             }
                         } else {
+                            sshHandler.sendCmdBlocking(clock, session, "echo \"SSID="+ssidField.getText()+"\" > /etc/wifi.conf");
                             sshHandler.sendCmdBlocking(clock, session, "echo \"PASSPHRASE="+passphraseField.getText()+"\" >> /etc/wifi.conf");
                         }
                     }
@@ -636,6 +671,7 @@ public class ConfigUtilController extends AbstractController implements Initiali
         @Override
         protected void done() {
             try {
+
                 String res = get();
                 if(res.equals("invalidIPAddress"))
                 {
@@ -648,6 +684,9 @@ public class ConfigUtilController extends AbstractController implements Initiali
                 }  else if(res.equals("noIPAddress")) {
                     ConfigUtilController.this.setProgress(0);
                     ConfigUtilController.this.setMsgLabelText("IP address field is empty");
+                } else if(res.equals("notInfor")) {
+                    ConfigUtilController.this.setProgress(0);
+                    ConfigUtilController.this.setMsgLabelText( ipField.getText() + " is not an Infor clock");
                 }else {
 
                     try {

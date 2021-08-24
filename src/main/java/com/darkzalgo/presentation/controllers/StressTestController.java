@@ -6,6 +6,7 @@ import com.darkzalgo.utility.Cmds;
 import com.darkzalgo.utility.SSHHandler;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -14,11 +15,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javafx.event.ActionEvent;
-import java.io.File;
+
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -48,6 +48,8 @@ public class StressTestController extends AbstractController implements Initiali
     ArrayList<ProgressBar> progressBarList;
 
     ToggleGroup stressTestGroup = new ToggleGroup();
+
+    Semaphore lblMutex = new Semaphore(1), progMutex = new Semaphore(1);
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -114,8 +116,7 @@ public class StressTestController extends AbstractController implements Initiali
         });
     }
 
-    @FXML public void gogo(ActionEvent event)
-    {
+    @FXML public void gogo(ActionEvent event) throws InterruptedException {
         this.pushTestPool.submit(new pushTestThread(new TimeClock()));
         this.pushTestPool.submit(new pushTestThread(new TimeClock()));
         this.pushTestPool.submit(new pushTestThread(new TimeClock()));
@@ -124,7 +125,47 @@ public class StressTestController extends AbstractController implements Initiali
         this.pushTestPool.submit(new pushTestThread(new TimeClock()));
         this.pushTestPool.submit(new pushTestThread(new TimeClock()));
         this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+
 //        this.pushTestPool.submit(new pushTestThread(new TimeClock()));
+    }
+
+    private void setProgressBarProgress(ProgressBar bar, double val)
+    {
+        Platform.runLater(()->{
+            bar.setProgress(val);
+        });
+    }
+
+    private void setLabelText(Label lbl, String text)
+    {
+        Platform.runLater(()->{
+            lbl.setText(text);
+        });
     }
 
 
@@ -133,7 +174,7 @@ public class StressTestController extends AbstractController implements Initiali
     {
         Label outputLbl;
         ProgressBar progressBar;
-        Semaphore mutex = new Semaphore(1);
+
         TimeClock clock;
         int counter = 0;
         public pushTestThread(TimeClock clock)
@@ -144,9 +185,14 @@ public class StressTestController extends AbstractController implements Initiali
         {
             for (Label tempLbl : StressTestController.this.outputLblList)
             {
-                if (!((boolean) tempLbl.getUserData()))
+                boolean inUse = (boolean)tempLbl.getUserData();
+                logger.info("TEMP LBL WITH INDEX " + StressTestController.this.outputLblList.indexOf(tempLbl) + " IS " + inUse);
+                if (!(inUse))
                 {
-                    tempLbl.setUserData(true);
+//                    Platform.runLater(()->{
+                        tempLbl.setUserData(true);
+//                    });
+                    logger.info("THREAD "+ Thread.currentThread() + " USING OUTPUTLBL WITH INDEX "+ StressTestController.this.outputLblList.indexOf(tempLbl));
                     return tempLbl;
                 }
             }
@@ -154,30 +200,57 @@ public class StressTestController extends AbstractController implements Initiali
         }
         @Override
         protected String doInBackground() throws Exception {
-            mutex.acquire();
-            outputLbl = getUsableLbl();
-            Thread.sleep(1000);
-            mutex.release();
+            try {
+                lblMutex.acquire();
+                outputLbl = getUsableLbl();
+//                Thread.sleep(1000);
+            } catch (InterruptedException e){
+
+            } finally {
+                lblMutex.release();
+            }
             while(outputLbl == null)
             {
+                try {
                Thread.sleep(5000);
-                mutex.acquire();
+                lblMutex.acquire();
                 outputLbl = getUsableLbl();
                 Thread.sleep(1000);
-                mutex.release();
+                } catch (InterruptedException e){
+
+                } finally {
+                    lblMutex.release();
+                }
                 counter++;
                 if (counter >=18)
                 return "ERROR_NOLBLS";
             }
-            mutex.acquire();
-            progressBar = StressTestController.this.progressBarList.get(StressTestController.this.outputLblList.indexOf(outputLbl));
-            Thread.sleep(1000);
-            mutex.release();
+
+            logger.info("THREAD "+ Thread.currentThread() + " USING OUTPUTLBL WITH INDEX "+ StressTestController.this.outputLblList.indexOf(outputLbl));
             try {
-                progressBar.setVisible(true);
-                progressBar.setProgress(-1);
-                outputLbl.setText("Connecting to " + clock.getIpAddress());
-                Session session = sshHandler.longConnect(clock);
+                progMutex.acquire();
+                progressBar = StressTestController.this.progressBarList.get(StressTestController.this.outputLblList.indexOf(outputLbl));
+                logger.info("THREAD " + Thread.currentThread() + " USING PROGBAR WITH INDEX " + StressTestController.this.progressBarList.indexOf(progressBar));
+            } catch (InterruptedException e){
+
+            }finally {
+                progMutex.release();
+            }
+
+            try {
+                String ip = "192.168.4.39";
+                clock.setIpAddress(ip);
+                clock.setPassword("$ynEL1921313");
+                clock.setModel("Synergy/X A20");
+                Platform.runLater(()->{
+                    progressBar.setVisible(true);
+                });
+
+
+
+                setProgressBarProgress(progressBar, -1);
+                setLabelText(outputLbl, "Connecting to " + clock.getIpAddress());
+                Session session = null;//sshHandler.longConnect(clock);
 //                String stFile = "";
 //                sshHandler.sendThroughSFTP(clock, new String[]{"put", stFile, "/"});
 
@@ -195,12 +268,10 @@ public class StressTestController extends AbstractController implements Initiali
 //                {
 //                    return "noModelChosen";
 //                }
-                String ip = "192.168.4.50";
-                clock.setIpAddress(ip);
-                clock.setPassword("$ynEL88RVER");
+
 //                clock.setModel(ConfigUtilController.this.modelChoiceBox.getValue());
-                progressBar.setProgress(-1);
-                outputLbl.setText("Attempting to connect to " + ip);
+                setProgressBarProgress(progressBar, -1);
+                setLabelText(outputLbl, "Attempting to connect to " + ip);
                 try {
                     session  = sshHandler.longConnect(clock);
                 }catch (JSchException e)
@@ -215,28 +286,35 @@ public class StressTestController extends AbstractController implements Initiali
                 StringBuilder getInfoStringBuilder = new StringBuilder();
 
                 try {
-                    progressBar.setProgress(0);
+                    setProgressBarProgress(progressBar, 0);
+                    if(!sshHandler.isInforClock(clock))
+                    {
+                        setLabelText(outputLbl, ip + " is not an Infor clock");
+                        outputLbl.setUserData(false);
+                        return "notInfor";
+                    }
 
-                    outputLbl.setText("Getting NTP servers from " + ip);
+
+                    setLabelText(outputLbl, "Getting NTP servers from " + ip);
                     getInfoStringBuilder.append("NTP Servers (/etc/default/ntpd): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETNTPD));
-                    progressBar.setProgress((double)1/12);
+                    setProgressBarProgress(progressBar, (double)1/12);
 
                     getInfoStringBuilder.append("\nNTP Servers (/etc/ntp.conf): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETNTP));
-                    progressBar.setProgress((double)2/12);
+                    setProgressBarProgress(progressBar, (double)2/12);
 
-                    outputLbl.setText("Getting Customer URL from " + ip);
+                    setLabelText(outputLbl, "Getting Customer URL from " + ip);
                     getInfoStringBuilder.append("\nCustomer URL: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETURL));
-                    progressBar.setProgress((double)3/12);
+                    setProgressBarProgress(progressBar, (double)3/12);
 
-                    outputLbl.setText("Getting Time Zone from " + ip);
+                    setLabelText(outputLbl, "Getting Time Zone from " + ip);
                     getInfoStringBuilder.append("\nTime Zone (/etc/TZ): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETTZ));
-                    progressBar.setProgress((double)4/12);
+                    setProgressBarProgress(progressBar, (double)4/12);
                     getInfoStringBuilder.append("\nTime Zone (/etc/timezone): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETTIMEZONE));
-                    progressBar.setProgress((double)5/12);
+                    setProgressBarProgress(progressBar, (double)5/12);
 
-                    outputLbl.setText("Getting Mac Address from " + ip);
+                    setLabelText(outputLbl, "Getting Mac Address from " + ip);
                     getInfoStringBuilder.append("\nMAC Address: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETMAC));
-                    progressBar.setProgress((double)6/12);
+                    setProgressBarProgress(progressBar, (double)6/12);
                     switch (clock.getModel())
                     {
                         case "SYnergy/X  / A20":
@@ -251,26 +329,30 @@ public class StressTestController extends AbstractController implements Initiali
                         default:
                             break;
                     }
-                    outputLbl.setText("Getting Reader Name from " + ip);
+                    setLabelText(outputLbl, "Getting Reader Name from " + ip);
                     getInfoStringBuilder.append("\nReader Name: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETREADERNAME));
-                    progressBar.setProgress((double)7/12);
+                    setProgressBarProgress(progressBar, (double)7/12);
 
-                    outputLbl.setText("Getting Software Update Type from " + ip);
+                    setLabelText(outputLbl, "Getting Software Update Type from " + ip);
                     getInfoStringBuilder.append("\nSoftware Update Type: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETUPDATETYPE));
-                    progressBar.setProgress((double)8/12);
+                    setProgressBarProgress(progressBar, (double)8/12);
 
-                    outputLbl.setText("Getting WiFi Network information from " + ip);
+                    setLabelText(outputLbl, "Getting WiFi Network information from " + ip);
                     getInfoStringBuilder.append("\nWifi Net Type: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFINET).replace("address","IP Address:").replace("netmask", "Subnet Mask:").replace("gateway", "Gateway:"));
-                    progressBar.setProgress((double)9/12);
+                    setProgressBarProgress(progressBar, (double)9/12);
                     String temp = sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFIDNS);
-                    progressBar.setProgress((double)10/12);
+                    setProgressBarProgress(progressBar, (double)10/12);
                     getInfoStringBuilder.append("\nWiFi DNS Servers: "+ (temp.length() > 2 ? temp:"N/A"));
                     temp = sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFICONF);
-                    progressBar.setProgress((double)11/12);
+                    setProgressBarProgress(progressBar, (double)11/12);
                     getInfoStringBuilder.append("\nWiFi Conf: " + (temp.contains("SSID") ? temp.replace("\n"," "):"NONE"));
 
+                    setProgressBarProgress(progressBar, 1);
+                    setLabelText(outputLbl, "Done getting info from " + ip);
 
                 } catch (Exception e) {
+                    e.printStackTrace();
+                    logger.error("CAUSE "+e.getCause());
                     logger.error("!!ERROR!! "+ e.getLocalizedMessage());
 
                 } finally{
@@ -281,8 +363,9 @@ public class StressTestController extends AbstractController implements Initiali
                 session = null;
                // return getInfoStringBuilder.toString();
 
-            }catch (JSchException ex)
+            }catch (Exception ex)
             {
+                logger.error("!!ERROR!! "+ ex.getLocalizedMessage());
                 return "failedToConnect";
             }
             return "Success";
