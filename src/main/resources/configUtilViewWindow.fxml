@@ -1,19 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<Pane prefHeight="975.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.darkzalgo.presentation.controllers.ConfigUtilController">
-   <children>
-      <GridPane layoutX="49.0" layoutY="14.0" prefHeight="351.0" prefWidth="702.0">
+<GridPane maxHeight="1080.0" maxWidth="1920.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.darkzalgo.presentation.controllers.ConfigUtilController">
+    <GridPane layoutX="150.0" layoutY="887.0" minHeight="20.0" prefHeight="40.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="4">
+    <ProgressBar fx:id="progressBar" layoutX="300.0" layoutY="926.0" minHeight="20.0" minWidth="40.0" prefWidth="150.0" progress="0.0" GridPane.halignment="RIGHT" GridPane.rowIndex="0" GridPane.valignment="CENTER">
+      <GridPane.margin>
+         <Insets left="5.0" right="5.0" />
+      </GridPane.margin></ProgressBar>
+    <Label fx:id="resultLbl" alignment="CENTER" contentDisplay="RIGHT" layoutX="10.0" layoutY="950.0" minHeight="20.0" prefHeight="16.0" prefWidth="71.0" text="resultLbl" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="0">
+      <GridPane.margin>
+         <Insets left="5.0" right="5.0" />
+      </GridPane.margin></Label>
+      <columnConstraints>
+         <ColumnConstraints minWidth="10.0" prefWidth="400.0" />
+         <ColumnConstraints minWidth="0.0" prefWidth="400.0" />
+      </columnConstraints>
+      <rowConstraints>
+         <RowConstraints minHeight="20.0" prefHeight="40.0" />
+      </rowConstraints>
+    </GridPane>
+    <GridPane layoutX="49.0" layoutY="14.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="0">
         <columnConstraints>
-          <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" maxWidth="403.0" minWidth="10.0" prefWidth="166.0" />
-          <ColumnConstraints hgrow="SOMETIMES" maxWidth="543.0" minWidth="10.0" prefWidth="536.0" />
+            <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" maxWidth="403.0" minWidth="10.0" prefWidth="166.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="543.0" minWidth="10.0" prefWidth="536.0" />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -23,45 +40,45 @@
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
-         <children>
+        <Label text="Model " textAlignment="RIGHT" />
+        <Label text="Customer URL " textAlignment="RIGHT" GridPane.rowIndex="1" />
+        <Label text="IP Address " textAlignment="RIGHT" GridPane.rowIndex="2" />
 
-            <Label text="Model " textAlignment="RIGHT" />
-            <Label text="Customer URL " textAlignment="RIGHT" GridPane.rowIndex="1" />
-            <Label text="IP Address " textAlignment="RIGHT" GridPane.rowIndex="2" />
+        <Label text="Current Clock Password " GridPane.rowIndex="3" />
+        <Label text="NTP Server " GridPane.rowIndex="4" />
+        <Label text="Time Zone " GridPane.rowIndex="5" />
+        <Label text="Mac Address " GridPane.rowIndex="8" />
+        <Label text="Reader Name " GridPane.rowIndex="9" />
+        <Label text="New Clock Password " GridPane.rowIndex="6" />
+        <Label text="Volume " GridPane.rowIndex="7" />
+        <Label text="Software Update Type " GridPane.rowIndex="10" />
+        <ChoiceBox fx:id="modelChoiceBox" prefWidth="150.0" GridPane.columnIndex="1" />
+        <TextField fx:id="urlField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+        <TextField fx:id="ipField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+        <TextField fx:id="curPwdField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+        <TextField fx:id="ntpField" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+        <ChoiceBox fx:id="tzChoiceBox" prefHeight="26.0" prefWidth="526.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+        <TextField fx:id="newPwdField" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+        <TextField fx:id="volField" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+        <TextField fx:id="macAddrField" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+        <TextField fx:id="readerNameField" GridPane.columnIndex="1" GridPane.rowIndex="9" />
+        <TextField fx:id="swupdateTypeField" GridPane.columnIndex="1" GridPane.rowIndex="10" />
+        <GridPane.margin>
+            <Insets left="5.0" right="5.0" />
+        </GridPane.margin>
 
-            <Label text="Current Clock Password " GridPane.rowIndex="3" />
-            <Label text="NTP Server " GridPane.rowIndex="4" />
-            <Label text="Time Zone " GridPane.rowIndex="5" />
-            <Label text="Mac Address " GridPane.rowIndex="8" />
-            <Label text="Reader Name " GridPane.rowIndex="9" />
-            <Label text="New Clock Password " GridPane.rowIndex="6" />
-            <Label text="Volume " GridPane.rowIndex="7" />
-            <Label text="Software Update Type " GridPane.rowIndex="10" />
-            <ChoiceBox fx:id="modelChoiceBox" prefWidth="150.0" GridPane.columnIndex="1" />
-            <TextField fx:id="urlField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <TextField fx:id="ipField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <TextField fx:id="curPwdField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-            <TextField fx:id="ntpField" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-            <ChoiceBox fx:id="tzChoiceBox" prefHeight="26.0" prefWidth="526.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-            <TextField fx:id="newPwdField" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-            <TextField fx:id="volField" GridPane.columnIndex="1" GridPane.rowIndex="7" />
-            <TextField fx:id="macAddrField" GridPane.columnIndex="1" GridPane.rowIndex="8" />
-            <TextField fx:id="readerNameField" GridPane.columnIndex="1" GridPane.rowIndex="9" />
-            <TextField fx:id="swupdateTypeField" GridPane.columnIndex="1" GridPane.rowIndex="10" />
 
-
-         </children>
-      </GridPane>
-      <GridPane layoutX="49.0" layoutY="383.0" prefHeight="290.0" prefWidth="307.0">
+    </GridPane>
+    <GridPane layoutX="49.0" layoutY="383.0" GridPane.rowIndex="1">
         <columnConstraints>
-          <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" maxWidth="218.0" minWidth="10.0" prefWidth="102.0" />
-          <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="267.0" minWidth="10.0" prefWidth="107.0" />
+            <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" maxWidth="218.0" minWidth="10.0" prefWidth="102.0" />
+            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="267.0" minWidth="10.0" prefWidth="107.0" />
             <ColumnConstraints hgrow="SOMETIMES" maxWidth="267.0" minWidth="10.0" prefWidth="85.0" />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
@@ -71,83 +88,96 @@
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
-         <children>
-            <CheckBox fx:id="wiredCheckBox" text="Wired Info " GridPane.rowIndex="1" />
-            <RadioButton fx:id="wiredDHCPRadio" mnemonicParsing="false" text="DHCP" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
-            <RadioButton fx:id="wiredStaticRadio" mnemonicParsing="false" text="Static" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
-            <Label fx:id="wiredIpLbl" text="IP Address " GridPane.rowIndex="2" />
-            <Label fx:id="wiredSubnetLbl" text="Subnet Mask " GridPane.rowIndex="3" />
-            <Label fx:id="wiredGatewayLbl" text="Gateway " GridPane.rowIndex="4" />
-            <Label fx:id="wiredDNS1Lbl" text="Wired DNS 1 " GridPane.rowIndex="6" />
-            <Label fx:id="wiredDNS2Lbl" text="Wired DNS 2 " GridPane.rowIndex="7" />
-            <Label fx:id="wiredDNS3Lbl" text="Wired DNS 3 " GridPane.rowIndex="8" />
-            <TextField fx:id="wiredIpField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" />
-            <TextField fx:id="wiredSubnetField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" />
-            <TextField fx:id="wiredGatewayField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="4" />
-            <TextField fx:id="wiredDNSField1" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="6" />
-            <TextField fx:id="wiredDNSField2" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="7" />
-            <TextField fx:id="wiredDNSField3" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="8" />
-         </children>
-      </GridPane>
-       <GridPane layoutX="444.0" layoutY="383.0" prefHeight="290.0" prefWidth="307.0">
-           <columnConstraints>
-               <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" maxWidth="218.0" minWidth="10.0" prefWidth="102.0" />
-               <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="267.0" minWidth="10.0" prefWidth="107.0" />
-               <ColumnConstraints hgrow="SOMETIMES" maxWidth="267.0" minWidth="10.0" prefWidth="85.0" />
-           </columnConstraints>
-           <rowConstraints>
-               <RowConstraints />
-               <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="SOMETIMES" />
+        <CheckBox fx:id="wiredCheckBox" text="Wired Info " GridPane.rowIndex="1" />
+        <RadioButton fx:id="wiredDHCPRadio" mnemonicParsing="false" text="DHCP" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
+        <RadioButton fx:id="wiredStaticRadio" mnemonicParsing="false" text="Static" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
+        <Label fx:id="wiredIpLbl" text="IP Address " GridPane.rowIndex="2" />
+        <Label fx:id="wiredSubnetLbl" text="Subnet Mask " GridPane.rowIndex="3" />
+        <Label fx:id="wiredGatewayLbl" text="Gateway " GridPane.rowIndex="4" />
+        <Label fx:id="wiredDNS1Lbl" text="Wired DNS 1 " GridPane.rowIndex="6" />
+        <Label fx:id="wiredDNS2Lbl" text="Wired DNS 2 " GridPane.rowIndex="7" />
+        <Label fx:id="wiredDNS3Lbl" text="Wired DNS 3 " GridPane.rowIndex="8" />
+        <TextField fx:id="wiredIpField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" />
+        <TextField fx:id="wiredSubnetField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" />
+        <TextField fx:id="wiredGatewayField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="4" />
+        <TextField fx:id="wiredDNSField1" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="6" />
+        <TextField fx:id="wiredDNSField2" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="7" />
+        <TextField fx:id="wiredDNSField3" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="8" />
+      <GridPane.margin>
+         <Insets left="5.0" right="5.0" />
+      </GridPane.margin>
+    </GridPane>
+    <GridPane layoutX="444.0" layoutY="383.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+        <columnConstraints>
+            <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" maxWidth="218.0" minWidth="10.0" prefWidth="102.0" />
+            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="267.0" minWidth="10.0" prefWidth="107.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="267.0" minWidth="10.0" prefWidth="85.0" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-               <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-               <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-               <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="SOMETIMES" />
-           </rowConstraints>
-           <children>
-
-               <CheckBox fx:id="wifiCheckBox" text="WiFi Info" GridPane.rowIndex="1" />
-               <RadioButton fx:id="wifiDHCPRadio" mnemonicParsing="false" text="DHCP" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
-               <RadioButton fx:id="wifiStaticRadio" mnemonicParsing="false" text="Static" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
-               <Label fx:id="wifiIpLbl" text="IP Address " GridPane.rowIndex="4" />
-               <Label fx:id="wifiSubnetLbl" text="Subnet Mask " GridPane.rowIndex="5" />
-               <Label fx:id="wifiGatewayLbl" text="Gateway " GridPane.rowIndex="6" />
-               <Label fx:id="ssidLbl" text="SSID " GridPane.rowIndex="2" />
-               <Label fx:id="passphraseLbl" text="Passphrase " GridPane.rowIndex="3" />
-               <Label fx:id="wifiDNS1Lbl" text="WiFi DNS 1 " GridPane.rowIndex="8" />
-               <Label fx:id="wifiDNS2Lbl" text="WiFi DNS 2 " GridPane.rowIndex="9" />
-               <Label fx:id="wifiDNS3Lbl" text="WiFi DNS 3 " GridPane.rowIndex="10" />
-               <TextField fx:id="ssidField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" />
-               <TextField fx:id="passphraseField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" />
-               <TextField fx:id="wifiIpField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="4" />
-               <TextField fx:id="wifiSubnetField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="5" />
-               <TextField fx:id="wifiGatewayField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="6" />
-               <TextField fx:id="wifiDNSField1" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="8" />
-               <TextField fx:id="wifiDNSField2" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="9" />
-               <TextField fx:id="wifiDNSField3" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="10" />
-           </children>
-       </GridPane>
-      <TextArea fx:id="outputTextArea" editable="false" layoutX="150.0" layoutY="700.0" maxWidth="500.0" prefHeight="175.0" prefWidth="500.0" wrapText="true" />
-      <GridPane layoutX="150.0" layoutY="887.0" prefHeight="36.0" prefWidth="500.0">
+        </rowConstraints>
+        <CheckBox fx:id="wifiCheckBox" text="WiFi Info" GridPane.rowIndex="1" />
+        <RadioButton fx:id="wifiDHCPRadio" mnemonicParsing="false" text="DHCP" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
+        <RadioButton fx:id="wifiStaticRadio" mnemonicParsing="false" text="Static" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
+        <Label fx:id="wifiIpLbl" text="IP Address " GridPane.rowIndex="4" />
+        <Label fx:id="wifiSubnetLbl" text="Subnet Mask " GridPane.rowIndex="5" />
+        <Label fx:id="wifiGatewayLbl" text="Gateway " GridPane.rowIndex="6" />
+        <Label fx:id="ssidLbl" text="SSID " GridPane.rowIndex="2" />
+        <Label fx:id="passphraseLbl" text="Passphrase " GridPane.rowIndex="3" />
+        <Label fx:id="wifiDNS1Lbl" text="WiFi DNS 1 " GridPane.rowIndex="8" />
+        <Label fx:id="wifiDNS2Lbl" text="WiFi DNS 2 " GridPane.rowIndex="9" />
+        <Label fx:id="wifiDNS3Lbl" text="WiFi DNS 3 " GridPane.rowIndex="10" />
+        <TextField fx:id="ssidField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" />
+        <TextField fx:id="passphraseField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" />
+        <TextField fx:id="wifiIpField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="4" />
+        <TextField fx:id="wifiSubnetField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="5" />
+        <TextField fx:id="wifiGatewayField" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="6" />
+        <TextField fx:id="wifiDNSField1" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="8" />
+        <TextField fx:id="wifiDNSField2" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="9" />
+        <TextField fx:id="wifiDNSField3" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="10" />
+      <GridPane.margin>
+         <Insets left="5.0" right="5.0" />
+      </GridPane.margin>
+    </GridPane>
+    <TextArea fx:id="outputTextArea" editable="false" layoutX="150.0" layoutY="700.0" maxWidth="500.0" prefHeight="175.0" prefWidth="500.0" wrapText="true" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" GridPane.rowIndex="2" GridPane.valignment="CENTER">
+      <GridPane.margin>
+         <Insets bottom="10.0" top="10.0" />
+      </GridPane.margin></TextArea>
+    <GridPane layoutX="150.0" layoutY="887.0" prefHeight="36.0" prefWidth="500.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="3">
         <columnConstraints>
-          <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
             <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-          <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
         </columnConstraints>
         <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="SOMETIMES" />
         </rowConstraints>
-         <children>
-            <Button fx:id="clearBtn" mnemonicParsing="false" onAction="#clear" prefWidth="115.0" text="Clear" />
-            <Button fx:id="getSettingsBtn" mnemonicParsing="false" onAction="#getInfo" prefWidth="115.0" text="Get Settings" GridPane.columnIndex="1" />
-            <Button fx:id="applySettingsBtn" mnemonicParsing="false" onAction="#setInfo" prefWidth="115.0" text="Apply Settings" GridPane.columnIndex="2" />
-         </children>
-      </GridPane>
-      <ProgressBar fx:id="progressBar" layoutX="300.0" layoutY="926.0" prefWidth="200.0" progress="0.0" />
-      <Label fx:id="resultLbl" alignment="CENTER" contentDisplay="RIGHT" layoutX="10.0" layoutY="950.0" maxWidth="780.0" prefWidth="780.0" text="resultLbl" textAlignment="CENTER" />
-   </children>
-</Pane>
+        <Button fx:id="clearBtn" mnemonicParsing="false" onAction="#clear" prefWidth="115.0" text="Clear" />
+        <Button fx:id="getSettingsBtn" mnemonicParsing="false" onAction="#getInfo" prefWidth="115.0" text="Get Settings" GridPane.columnIndex="1" />
+        <Button fx:id="applySettingsBtn" mnemonicParsing="false" onAction="#setInfo" prefWidth="115.0" text="Apply Settings" GridPane.columnIndex="2" />
+        <padding>
+            <Insets left="5.0" right="5.0" />
+        </padding>
+    </GridPane>
+    <columnConstraints>
+        <ColumnConstraints maxWidth="600.0" minWidth="250.0" prefWidth="400.0" />
+        <ColumnConstraints maxWidth="600.0" minWidth="250.0" prefWidth="400.0" />
+    </columnConstraints>
+    <rowConstraints>
+        <RowConstraints prefHeight="400.0" />
+        <RowConstraints minHeight="154.0" prefHeight="350.0" />
+        <RowConstraints minHeight="0.0" prefHeight="175.0" />
+        <RowConstraints minHeight="20.0" prefHeight="40.0" />
+        <RowConstraints minHeight="20.0" prefHeight="40.0" />
+    </rowConstraints>
+</GridPane>

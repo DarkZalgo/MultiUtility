@@ -186,13 +186,9 @@ public class StressTestController extends AbstractController implements Initiali
             for (Label tempLbl : StressTestController.this.outputLblList)
             {
                 boolean inUse = (boolean)tempLbl.getUserData();
-                logger.info("TEMP LBL WITH INDEX " + StressTestController.this.outputLblList.indexOf(tempLbl) + " IS " + inUse);
                 if (!(inUse))
                 {
-//                    Platform.runLater(()->{
                         tempLbl.setUserData(true);
-//                    });
-                    logger.info("THREAD "+ Thread.currentThread() + " USING OUTPUTLBL WITH INDEX "+ StressTestController.this.outputLblList.indexOf(tempLbl));
                     return tempLbl;
                 }
             }
@@ -203,7 +199,6 @@ public class StressTestController extends AbstractController implements Initiali
             try {
                 lblMutex.acquire();
                 outputLbl = getUsableLbl();
-//                Thread.sleep(1000);
             } catch (InterruptedException e){
 
             } finally {
@@ -226,11 +221,11 @@ public class StressTestController extends AbstractController implements Initiali
                 return "ERROR_NOLBLS";
             }
 
-            logger.info("THREAD "+ Thread.currentThread() + " USING OUTPUTLBL WITH INDEX "+ StressTestController.this.outputLblList.indexOf(outputLbl));
+//            logger.info("THREAD "+ Thread.currentThread() + " USING OUTPUTLBL WITH INDEX "+ StressTestController.this.outputLblList.indexOf(outputLbl));
             try {
                 progMutex.acquire();
                 progressBar = StressTestController.this.progressBarList.get(StressTestController.this.outputLblList.indexOf(outputLbl));
-                logger.info("THREAD " + Thread.currentThread() + " USING PROGBAR WITH INDEX " + StressTestController.this.progressBarList.indexOf(progressBar));
+//                logger.info("THREAD " + Thread.currentThread() + " USING PROGBAR WITH INDEX " + StressTestController.this.progressBarList.indexOf(progressBar));
             } catch (InterruptedException e){
 
             }finally {
@@ -238,9 +233,9 @@ public class StressTestController extends AbstractController implements Initiali
             }
 
             try {
-                String ip = "192.168.4.39";
+                String ip = "192.168.1.108";
                 clock.setIpAddress(ip);
-                clock.setPassword("$ynEL1921313");
+                clock.setPassword("$ynEL2001313");
                 clock.setModel("Synergy/X A20");
                 Platform.runLater(()->{
                     progressBar.setVisible(true);

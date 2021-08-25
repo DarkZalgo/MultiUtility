@@ -405,8 +405,12 @@ public class MainController extends AbstractController implements Initializable
         configUtilViewStage.setY(primaryWindow.getY());
 
 //        configUtilViewStage.setResizable(false);
-
+        configUtilViewStage.setMinHeight(750);
+        configUtilViewStage.setMinWidth(650);
+        configUtilViewStage.setMaxHeight(1080);
+        configUtilViewStage.setMaxWidth(1200);
         configUtilViewStage.show();
+        letterbox(configUtilViewScene, (GridPane) configUtilViewScene.getRoot());
 
     }
 
@@ -434,8 +438,8 @@ public class MainController extends AbstractController implements Initializable
 
         stressTestViewStage.setMinHeight(750);
         stressTestViewStage.setMinWidth(500);
-        stressTestViewStage.setMaxHeight(1200);
-        stressTestViewStage.setMaxWidth(950);
+        stressTestViewStage.setMaxHeight(1080);
+        stressTestViewStage.setMaxWidth(1200);
 //        ((GridPane)stressTestViewScene.getRoot()).getChildren().forEach(child->{
 //           child.setScaleX(1.25);
 //           child.setScaleY(1.25);

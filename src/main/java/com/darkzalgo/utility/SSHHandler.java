@@ -693,6 +693,39 @@ public class SSHHandler
         cmdThreadPool.submit(sftpTask);
     }
 
+    public String getInforWBCSVers(TimeClock clock, Session session){
+        String res = "";
+        try {
+            res = sendCmdBlocking(clock, session, "#!/bin/sh\n" +
+                    "\n" +
+                    "LIB_PATH=/home/admin/wbcs/lib \n" +
+                    "WBCS_JAR=$LIB_PATH/wbcs.jar\n" +
+                    "APP_JAR=$LIB_PATH/app.jar\n" +
+                    "\n" +
+                    "getVersion() {\n" +
+                    "\ttempDir=/home/check_version\n" +
+                    "        rm -rf $tempDir\n" +
+                    "        mkdir -p $tempDir\n" +
+                    "        unzip $1 -q -x \"com/*\" -d $tempDir\n" +
+                    "\tcat \"$tempDir/version.properties\"\n" +
+                    "        rm -rf $tempDir\n" +
+                    "        echo \"\"\n" +
+                    "}\n" +
+                    "\n" +
+                    "if [ -f $WBCS_JAR ]; then\n" +
+                    "\tgetVersion $WBCS_JAR\n" +
+                    "elif [ -f $APP_JAR ]; then\n" +
+                    "\tgetVersion $APP_JAR\n" +
+                    "fi");
+        }catch (JSchException|IOException|InterruptedException e )
+        {
+            e.printStackTrace();
+        } finally {
+            session.disconnect();
+        }
+        return res;
+    }
+
     public boolean isInforClock(TimeClock clock) throws JSchException, IOException, InterruptedException {
         String res = sendCmdBlocking(clock, connect(clock),"if [ -d /home/admin/wbcs ]; then echo \"Infor\" ; else echo \"Not Infor\"; fi");
         if (res !=null)

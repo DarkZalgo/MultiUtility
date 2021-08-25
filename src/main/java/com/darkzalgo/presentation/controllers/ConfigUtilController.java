@@ -371,24 +371,24 @@ public class ConfigUtilController extends AbstractController implements Initiali
                     }
                     ConfigUtilController.this.setMsgLabelText("Getting NTP servers from " + ipField.getText());
                     getInfoStringBuilder.append("NTP Servers (/etc/default/ntpd): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETNTPD));
-                    ConfigUtilController.this.setProgress((double)1/12);
+                    ConfigUtilController.this.setProgress((double)1/13);
 
                     getInfoStringBuilder.append("\nNTP Servers (/etc/ntp.conf): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETNTP));
-                    ConfigUtilController.this.setProgress((double)2/12);
+                    ConfigUtilController.this.setProgress((double)2/13);
 
                     ConfigUtilController.this.setMsgLabelText("Getting Customer URL from " + ipField.getText());
                     getInfoStringBuilder.append("\nCustomer URL: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETURL));
-                    ConfigUtilController.this.setProgress((double)3/12);
+                    ConfigUtilController.this.setProgress((double)3/13);
 
                     ConfigUtilController.this.setMsgLabelText("Getting Time Zone from " + ipField.getText());
                     getInfoStringBuilder.append("\nTime Zone (/etc/TZ): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETTZ));
-                    ConfigUtilController.this.setProgress((double)4/12);
+                    ConfigUtilController.this.setProgress((double)4/13);
                     getInfoStringBuilder.append("\nTime Zone (/etc/timezone): " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETTIMEZONE));
-                    ConfigUtilController.this.setProgress((double)5/12);
+                    ConfigUtilController.this.setProgress((double)5/13);
 
                     ConfigUtilController.this.setMsgLabelText("Getting Mac Address from " + ipField.getText());
                     getInfoStringBuilder.append("\nMAC Address: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETMAC));
-                    ConfigUtilController.this.setProgress((double)6/12);
+                    ConfigUtilController.this.setProgress((double)6/13);
                     switch (clock.getModel())
                     {
                         case "SYnergy/X  / A20":
@@ -405,20 +405,25 @@ public class ConfigUtilController extends AbstractController implements Initiali
                     }
                     ConfigUtilController.this.setMsgLabelText("Getting Reader Name from " + ipField.getText());
                     getInfoStringBuilder.append("\nReader Name: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETREADERNAME));
-                    ConfigUtilController.this.setProgress((double)7/12);
+                    ConfigUtilController.this.setProgress((double)7/13);
 
                     ConfigUtilController.this.setMsgLabelText("Getting Software Update Type from " + ipField.getText());
                     getInfoStringBuilder.append("\nSoftware Update Type: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETUPDATETYPE));
-                    ConfigUtilController.this.setProgress((double)8/12);
+                    ConfigUtilController.this.setProgress((double)8/13);
+
+                    ConfigUtilController.this.setMsgLabelText("Getting ethernet DNS from " + ipField.getText());
+                    String temp = sshHandler.sendCmdBlocking(clock, session, Cmds.GETETHDNS);
+                    getInfoStringBuilder.append("\nEthernet DNS Servers: "+ (temp.length() > 2 ? temp.replace("\n",", "):"N/A"));
+                    ConfigUtilController.this.setProgress((double)9/13);
 
                     ConfigUtilController.this.setMsgLabelText("Getting WiFi Network information from " + ipField.getText());
                     getInfoStringBuilder.append("\nWifi Net Type: " + sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFINET).replace("address","IP Address:").replace("netmask", "Subnet Mask:").replace("gateway", "Gateway:"));
-                    ConfigUtilController.this.setProgress((double)9/12);
-                    String temp = sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFIDNS);
-                    ConfigUtilController.this.setProgress((double)10/12);
-                    getInfoStringBuilder.append("\nWiFi DNS Servers: "+ (temp.length() > 2 ? temp:"N/A"));
+                    ConfigUtilController.this.setProgress((double)10/13);
+                    temp = sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFIDNS);
+                    ConfigUtilController.this.setProgress((double)11/13);
+                    getInfoStringBuilder.append("\nWiFi DNS Servers: "+ (temp.length() > 2 ? temp.replace("\n",", "):"N/A"));
                     temp = sshHandler.sendCmdBlocking(clock, session, Cmds.GETWIFICONF);
-                    ConfigUtilController.this.setProgress((double)11/12);
+                    ConfigUtilController.this.setProgress((double)12/13);
                     getInfoStringBuilder.append("\nWiFi Conf: " + (temp.contains("SSID") ? temp.replace("\n"," "):"NONE"));
 
 
