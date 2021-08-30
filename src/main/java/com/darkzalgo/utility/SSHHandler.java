@@ -2,7 +2,6 @@ package com.darkzalgo.utility;
 
 
 import com.darkzalgo.presentation.controllers.AbstractController;
-import com.darkzalgo.presentation.controllers.MainController;
 import com.darkzalgo.presentation.gui.Context;
 import com.jcraft.jsch.*;
 import com.darkzalgo.model.TimeClock;
@@ -19,9 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.*;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -173,7 +170,7 @@ public class SSHHandler
                                 sendResultMsg("Incorrect password for " + timeClock.getIpAddress());
                                 timeClock.setRemoveFlag(true);
                                 timeClock.setCanConnect(false);
-                                Context.getInstance().currentClocks().remove(timeClock);
+                                Context.getInstance().getClockInfoClocks().remove(timeClock);
                                 showProgress(0);
                             }
                         }
@@ -189,7 +186,7 @@ public class SSHHandler
                 showProgress(0);
                 timeClock.setRemoveFlag(true);
                 timeClock.setCanConnect(false);
-                Context.getInstance().currentClocks().remove(timeClock);
+                Context.getInstance().getClockInfoClocks().remove(timeClock);
             }
         }
         return session;
@@ -399,9 +396,13 @@ public class SSHHandler
         Context.getInstance().getTableViewController().addToImageSet(image);
     }
 
-    public void checkAllHosts(String subnet) throws IOException, InterruptedException, ExecutionException
+    public void checkAllHosts(String subnet, int[]... ports) throws IOException, InterruptedException, ExecutionException
     {
-
+        int[] portsToCheck = this.portsToCheck;
+        if (ports[0]!= null && ports[0][0] != 0)
+        {
+            portsToCheck=ports[0];
+        }
         List<String> resultIpList = new ArrayList<>();
                 List<String> ipArray = new ArrayList<>();
                 for (int i = 1; i < 255; i++)
@@ -409,11 +410,12 @@ public class SSHHandler
                     ipArray.add(subnet + i);
                 }
 
+        int[] finalPortsToCheck = portsToCheck;
         ipArray.parallelStream().forEach(ip -> {
-            for (int port : portsToCheck)
+            for (int port : finalPortsToCheck)
             {
                 try {
-                    sendResultMsg("Checking ip " + ip + " for connectivity...");
+                    sendResultMsg("Checking IP " + ip + " for connectivity...");
                     if (!resultIpList.contains(ip))
                     {
                         logger.info("Testing " + ip + ":" + port + " for connectivity...");
@@ -430,13 +432,21 @@ public class SSHHandler
                 }
             }
         });
-        sendResultMsg("Found " + resultIpList.size() + " IP Addresses");
-        controller.setIpTextAreaIPs(resultIpList);
+        sendResultMsg("Found " + resultIpList.size() + (resultIpList.size() == 1 ? " IP Address":" IP Addresses"));
+
+            controller.setIpTextAreaIPs(resultIpList);
+
     }
 
-    public String checkHost(String ip)
+    public String checkHost(String ip, int[]... ports)
     {
+
         int timeout = 75;
+        int[] portsToCheck = this.portsToCheck;
+        if (ports[0]!= null && ports[0][0] != 0)
+        {
+            portsToCheck=ports[0];
+        }
         String ipOpenPort = null;
             for (int port : portsToCheck)
             {
@@ -476,11 +486,38 @@ public class SSHHandler
         return res;
     }
 
+    public String getMac(String ip) throws IOException
+    {
+        String[] pingClockCmd;
+        String[] getMacCmds = null;
+        String os = System.getProperty("os.name");
+        if(os.equalsIgnoreCase("LINUX"))
+        {
+            pingClockCmd = new String[] {"bash", "-c", "ping "+ ip+" -c 1 -w 75" };
+            getMacCmds = new String[] {"bash","-c", "arp -a "+ ip +"|egrep -o '([0-9a-f]{2}:){5}[0-9a-f]{2}'"};
+        }
+        else {
+
+            pingClockCmd = new String[] {"powershell.exe","-command", "ping -n 1 -w 75 " + ip};
+            getMacCmds = new String[] {"powershell.exe","-command" ,"\"$mac=$($(arp -a "+ip+")|"
+                    + "select-string -pattern '((\\d|([a-f]|[A-F])){2}\\-){5}(\\d|([a-f]|[A-F])){2}' -AllMatches |"
+                    + "% matches |"
+                    + "% value)\"" };
+
+        }
+
+        String mac="";
+        sendSystemCommand(pingClockCmd);
+        mac=sendSystemCommand(getMacCmds);
+        logger.info("MAC IS " + mac);
+        return mac;
+    }
+
     public String getLastFourMAC(String ip) throws IOException {
 		String[] pingClockCmd;
 		String[] getMacCmds = null;
 		String os = System.getProperty("os.name");
-		if(os.toUpperCase().equals("LINUX"))
+		if(os.equalsIgnoreCase("LINUX"))
 		{
 			pingClockCmd = new String[] {"bash", "-c", "ping "+ ip+" -c 1 -w 75" };
 			getMacCmds = new String[] {"bash","-c", "arp -a "+ ip +"|egrep -o '([0-9a-f]{2}:){5}[0-9a-f]{2}'|sed 's|:||g'|tail -c 5"};
@@ -727,11 +764,14 @@ public class SSHHandler
     }
 
     public boolean isInforClock(TimeClock clock) throws JSchException, IOException, InterruptedException {
-        String res = sendCmdBlocking(clock, connect(clock),"if [ -d /home/admin/wbcs ]; then echo \"Infor\" ; else echo \"Not Infor\"; fi");
+        Session session = connect(clock);
+        String res = sendCmdBlocking(clock,session ,"if [ -d /home/admin/wbcs ]; then echo \"Infor\" ; else echo \"Not Infor\"; fi");
+        session.disconnect();
         if (res !=null)
         {
             return res.equals("Infor");
         }
+
         return false;
     }
 

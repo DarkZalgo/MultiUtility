@@ -15,5 +15,5 @@ public abstract class AbstractController {
 
     public abstract void setSelectedIps(String ip);
 
-    public abstract String getPassword(String ip);
+    public abstract String getPassword(String... ip);
 }

@@ -20,14 +20,15 @@ public class TimeClock
     private boolean removeFlag = false;
     private boolean canConnect;
 
-    private SimpleStringProperty model = new SimpleStringProperty();
-    private SimpleStringProperty image = new SimpleStringProperty();
-    private SimpleStringProperty ipAddress = new SimpleStringProperty();
-    private SimpleStringProperty macAddress = new SimpleStringProperty();
-    private SimpleStringProperty kernelVersion = new SimpleStringProperty();
-    private SimpleStringProperty uptime = new SimpleStringProperty();
-    private SimpleStringProperty version = new SimpleStringProperty();
-    private SimpleStringProperty rebootCount = new SimpleStringProperty();
+    private SimpleStringProperty model = new SimpleStringProperty("");
+    private SimpleStringProperty image = new SimpleStringProperty("");
+    private SimpleStringProperty ipAddress = new SimpleStringProperty("");
+    private SimpleStringProperty macAddress = new SimpleStringProperty("");
+    private SimpleStringProperty kernelVersion = new SimpleStringProperty("");
+    private SimpleStringProperty uptime = new SimpleStringProperty("");
+    private SimpleStringProperty version = new SimpleStringProperty("");
+    private SimpleStringProperty rebootCount = new SimpleStringProperty("");
+    private SimpleStringProperty reason = new SimpleStringProperty("");
 
     private int port = 22;
 
@@ -200,6 +201,18 @@ public class TimeClock
 
     public void setRemoveFlag(boolean removeFlag) {
         this.removeFlag = removeFlag;
+    }
+
+    public String getReason() {
+        return reason.get();
+    }
+
+    public SimpleStringProperty reasonProperty() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = new SimpleStringProperty(reason);
     }
 
     public String[] getRawClockInfo() {

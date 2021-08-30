@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<GridPane maxHeight="1080.0" maxWidth="1920.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.darkzalgo.presentation.controllers.ConfigUtilController">
+<GridPane maxHeight="1080.0" maxWidth="960.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.darkzalgo.presentation.controllers.ConfigUtilController">
     <GridPane layoutX="150.0" layoutY="887.0" minHeight="20.0" prefHeight="40.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="4">
     <ProgressBar fx:id="progressBar" layoutX="300.0" layoutY="926.0" minHeight="20.0" minWidth="40.0" prefWidth="150.0" progress="0.0" GridPane.halignment="RIGHT" GridPane.rowIndex="0" GridPane.valignment="CENTER">
       <GridPane.margin>
@@ -21,6 +21,9 @@
       <rowConstraints>
          <RowConstraints minHeight="20.0" prefHeight="40.0" />
       </rowConstraints>
+      <GridPane.margin>
+         <Insets bottom="5.0" />
+      </GridPane.margin>
     </GridPane>
     <GridPane layoutX="49.0" layoutY="14.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="0">
         <columnConstraints>
@@ -149,11 +152,11 @@
          <Insets left="5.0" right="5.0" />
       </GridPane.margin>
     </GridPane>
-    <TextArea fx:id="outputTextArea" editable="false" layoutX="150.0" layoutY="700.0" maxWidth="500.0" prefHeight="175.0" prefWidth="500.0" wrapText="true" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" GridPane.rowIndex="2" GridPane.valignment="CENTER">
+    <TextArea fx:id="outputTextArea" editable="false" layoutX="150.0" layoutY="700.0" maxHeight="175.0" maxWidth="500.0" prefHeight="175.0" prefWidth="500.0" wrapText="true" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" GridPane.rowIndex="2" GridPane.valignment="CENTER">
       <GridPane.margin>
          <Insets bottom="10.0" top="10.0" />
       </GridPane.margin></TextArea>
-    <GridPane layoutX="150.0" layoutY="887.0" prefHeight="36.0" prefWidth="500.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="3">
+    <GridPane layoutX="150.0" layoutY="887.0" prefHeight="30.0" prefWidth="500.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="3">
         <columnConstraints>
             <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
             <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />

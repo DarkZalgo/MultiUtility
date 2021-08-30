@@ -6,11 +6,10 @@ import com.darkzalgo.presentation.controllers.ConfigUtilController;
 import com.darkzalgo.presentation.controllers.MainController;
 import com.darkzalgo.presentation.controllers.StressTestController;
 import com.darkzalgo.presentation.controllers.TableViewController;
-import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.util.Callback;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,34 +26,86 @@ public class Context
 
     private boolean hasListener = true;
 
-    private ObservableList<TimeClock> clocks = FXCollections.observableArrayList();/*(new Callback<TimeClock, Observable[]>() {
-        @Override
-        public Observable[] call(TimeClock timeClock) {
-            logger.info("\n\n\n\n\nCLOCKS OBSERVABLE CALL\n\n\n\n");
-            if (timeClock.rebootCountProperty()==null)
-            {
-                return new Observable[0];
-            }
-            logger.info("Adding New Observable for " +timeClock.getIpAddress());
-            Observable[] res = new Observable[] {
-                    timeClock.modelProperty(),
-                    timeClock.imageProperty(),
-                    timeClock.ipAddressProperty(),
-                    timeClock.macAddressProperty(),
-                    timeClock.kernelVersionProperty(),
-                    timeClock.uptimeProperty(),
-                    timeClock.rebootCountProperty(),
-                    timeClock.dateProperty()
-            };
+    private ObservableList<TimeClock> clockInfoClocks = FXCollections.observableArrayList();
 
-            return res;
-        }
-    });*/
-
+    private ObservableList<TimeClock> failedClocks = FXCollections.observableArrayList();
 
     private MainController controller;
 
     private TableViewController tableViewController;
+
+    private ConfigUtilController configController;
+
+    private StressTestController stressTestController;
+
+    private Stage mainViewStage, tableViewStage, configUtilStage, stressTestStage;
+
+    public ObservableList<TimeClock> getClockInfoClocks()
+    {
+        if (!hasListener)
+        {
+            clockInfoClocks.addListener(new ListChangeListener<TimeClock>() {
+                @Override
+                public void onChanged(Change<? extends TimeClock> change)
+                {
+                    while (change.next())
+                    {
+                        if (tableViewController!=null)
+                        {
+                            tableViewController.refresh((ObservableList<TimeClock>) change.getList());
+                        }
+                    }
+                }
+            });
+            hasListener = true;
+            logger.info("Added Listener to clocks object");
+        }
+        return clockInfoClocks;
+    }
+    public ObservableList<TimeClock> getFailedClocks()
+    {
+        if (!hasListener)
+        {
+            failedClocks.addListener(new ListChangeListener<TimeClock>() {
+                @Override
+                public void onChanged(Change<? extends TimeClock> change)
+                {
+                    while (change.next())
+                    {
+                        if (tableViewController!=null)
+                        {
+                            tableViewController.refresh((ObservableList<TimeClock>) change.getList());
+                        }
+                    }
+                }
+            });
+            hasListener = true;
+            logger.info("Added Listener to clocks object");
+        }
+        return failedClocks;
+    }
+
+
+    public void setClocks(ObservableList<TimeClock> clocks)
+    {
+        this.clockInfoClocks = clocks;
+    }
+
+    public MainController getMainController() {
+        return controller;
+    }
+
+    public void setMainController(MainController controller) {
+        this.controller = controller;
+    }
+
+    public TableViewController getTableViewController() {
+        return tableViewController;
+    }
+
+    public void setTableViewController(TableViewController tableViewController) {
+        this.tableViewController = tableViewController;
+    }
 
     public ConfigUtilController getConfigController() {
         return configController;
@@ -72,78 +123,35 @@ public class Context
         this.stressTestController = stressTestController;
     }
 
-    private ConfigUtilController configController;
-
-    private StressTestController stressTestController;
-
-    public ObservableList<TimeClock> currentClocks()
-    {
-        if (!hasListener)
-        {
-            clocks.addListener(new ListChangeListener<TimeClock>() {
-                @Override
-                public void onChanged(Change<? extends TimeClock> change)
-                {
-                    while (change.next())
-                    {
-                        if (tableViewController!=null)
-                        {
-                            logger.info("\n\n\nCALLING REFRESH FROM CONTEXT");
-                            tableViewController.refresh((ObservableList<TimeClock>) change.getList());
-                        }
-                    }
-//                if (tableViewController!=null)
-//                {
-//                    tableViewController.refresh(clockList);
-//                }
-                }
-            });
-            hasListener = true;
-            logger.info("Added Listener to clocks object");
-        }
-        return clocks;
+    public Stage getMainViewStage() {
+        return mainViewStage;
     }
 
-    public void addObservableListener (ObservableList<TimeClock> clockList)
-    {
-        clockList.addListener(new ListChangeListener<TimeClock>() {
-            @Override
-            public void onChanged(Change<? extends TimeClock> change)
-            {
-                while (change.next())
-                {
-                    if (tableViewController!=null)
-                    {
-                        logger.info("\n\n\nCALLING REFRESH FROM CONTEXT");
-                        tableViewController.refresh((ObservableList<TimeClock>) change.getList());
-                    }
-                }
-//                if (tableViewController!=null)
-//                {
-//                    tableViewController.refresh(clockList);
-//                }
-            }
-        });
+    public void setMainViewStage(Stage mainViewStage) {
+        this.mainViewStage = mainViewStage;
     }
 
-    public void setClocks(ObservableList<TimeClock> clocks)
-    {
-        this.clocks = clocks;
+    public Stage getTableViewStage() {
+        return tableViewStage;
     }
 
-    public MainController getMainController() {
-        return controller;
+    public void setTableViewStage(Stage tableViewStage) {
+        this.tableViewStage = tableViewStage;
     }
 
-    public void setMainController(MainController controller) {
-        this.controller = controller;
+    public Stage getConfigUtilStage() {
+        return configUtilStage;
     }
 
-    public TableViewController getTableViewController() {
-        return tableViewController;
+    public void setConfigUtilStage(Stage configUtilStage) {
+        this.configUtilStage = configUtilStage;
     }
 
-    public void setTableViewController(TableViewController tableViewController) {
-        this.tableViewController = tableViewController;
+    public Stage getStressTestStage() {
+        return stressTestStage;
+    }
+
+    public void setStressTestStage(Stage stressTestStage) {
+        this.stressTestStage = stressTestStage;
     }
 }

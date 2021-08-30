@@ -15,11 +15,12 @@
             <TableColumn fx:id="kernelVersionColumn" prefWidth="117.0" style="-fx-alignment: CENTER;" text="Kernel Version" />
             <TableColumn fx:id="uptimeColumn" prefWidth="165.0" style="-fx-alignment: CENTER;" text="Uptime" />
             <TableColumn fx:id="rebootColumn" prefWidth="67.0" style="-fx-alignment: CENTER;" text="Reboots" />
+            <TableColumn fx:id="reasonColumn" prefWidth="500.0" style="-fx-alignment: CENTER;" text="Reason" />
         </columns>
       </TableView>
-      <Button layoutX="14.0" layoutY="332.0" mnemonicParsing="false" onAction="#selectIPs" text="Select IPs" />
+      <Button fx:id="selectIPsBtn" layoutX="14.0" layoutY="332.0" mnemonicParsing="false" onAction="#selectIPs" text="Select IPs" />
       <ChoiceBox fx:id="selectIpByImageBox" layoutX="125.0" layoutY="332.0" prefWidth="150.0" />
-      <Button layoutX="130.0" layoutY="363.0" mnemonicParsing="false" onAction="#selectIPsByImage" text="Select IP By Image" />
+      <Button fx:id="selectIpByImageBtn" layoutX="130.0" layoutY="363.0" mnemonicParsing="false" onAction="#selectIPsByImage" text="Select IP By Image" />
       <Button fx:id="refreshBtn" layoutX="319.0" layoutY="332.0" mnemonicParsing="false" onAction="#buttonRefresh" text="Refresh" />
    </children>
 </Pane>

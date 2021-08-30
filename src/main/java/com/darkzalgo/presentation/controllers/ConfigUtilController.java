@@ -11,8 +11,10 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.Region;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ConfigUtilController extends AbstractController implements Initializable {
+
 
     private SSHHandler sshHandler = new SSHHandler(this);
 
@@ -64,10 +67,14 @@ public class ConfigUtilController extends AbstractController implements Initiali
     ToggleGroup wiredNetInfoGroup = new ToggleGroup();
     ToggleGroup wifiNetInfoGroup = new ToggleGroup();
 
+    private Stage currentStage;
+    private Scene currentScene;
+
 
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        Context.getInstance().setConfigController(this);
         wiredDHCPRadio.setToggleGroup(wiredNetInfoGroup);
         wiredStaticRadio.setToggleGroup(wiredNetInfoGroup);
 
@@ -251,7 +258,7 @@ public class ConfigUtilController extends AbstractController implements Initiali
     }
 
     @Override
-    public String getPassword(String ip) {
+    public String getPassword(String... ip) {
         String pwdStr = curPwdField.getText();
         String password = "synergy";
         if (pwdStr.length() > 0 && pwdStr.length() <5) {
@@ -291,9 +298,9 @@ public class ConfigUtilController extends AbstractController implements Initiali
         outputTextArea.clear();
         setProgress(0);
         setMsgLabelText("");
-        TimeClock clock = new TimeClock();
-        clock.setIpAddress("192.168.4.50");
-        clock.setPassword("$ynEL88RVER");
+        System.out.println(outputTextArea.getScene().getWidth());
+
+
 
 
     }
@@ -709,6 +716,22 @@ public class ConfigUtilController extends AbstractController implements Initiali
             }
 
         }
+    }
+
+    public void setStage(Stage stage)
+    {
+        this.currentStage = stage;
+        this.currentScene = stage.getScene();
+        if (currentScene.getRoot().getStyle().contains("black")) {
+            Platform.runLater(() -> {
+                progressBar.setStyle("-fx-accent: darkred");
+            });
+        } else {
+            Platform.runLater(() -> {
+                progressBar.setStyle("");
+            });
+        }
+
     }
 
 

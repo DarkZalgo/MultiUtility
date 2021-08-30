@@ -6,10 +6,9 @@ import com.darkzalgo.model.TimeClock;
 import com.darkzalgo.utility.SSHHandler;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -18,12 +17,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +31,10 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainController extends AbstractController implements Initializable
 {
@@ -69,11 +70,17 @@ public class MainController extends AbstractController implements Initializable
 
     private TableViewController tableViewController;
 
+    private StressTestController stressTestController;
+
+    private ConfigUtilController configUtilController;
+
     private ObservableList<TimeClock> timeClocks;
 
     private Parent tableViewRoot, sftpViewRoot, configUtilViewRoot, stressTestViewRoot;
 
-    private Scene tableViewScene, sftpViewScene, configUtilViewScene, stressTestViewScene;
+    private Scene tableViewScene, sftpViewScene, configUtilViewScene, stressTestViewScene, currentScene;
+
+    private Stage configUtilViewStage, stressTestViewStage, sftpViewStage, tableViewStage, currentStage;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
@@ -95,6 +102,7 @@ public class MainController extends AbstractController implements Initializable
         try {
             tableViewRoot = new FXMLLoader(getClass().getResource("/tableViewWindow.fxml")).load();
             tableViewScene = new Scene(tableViewRoot, 930, 400);
+            tableViewController = Context.getInstance().getTableViewController();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -108,12 +116,14 @@ public class MainController extends AbstractController implements Initializable
         try {
             configUtilViewRoot = new FXMLLoader(getClass().getResource("/configUtilViewWindow.fxml")).load();
             configUtilViewScene = new Scene(configUtilViewRoot, 800,975);
+            configUtilController = Context.getInstance().getConfigController();
         } catch (IOException e) {
             e.printStackTrace();
         }
         try {
             stressTestViewRoot = new FXMLLoader(getClass().getResource("/stressTestViewWindow.fxml")).load();
             stressTestViewScene = new Scene(stressTestViewRoot, 800,950);
+            stressTestController = Context.getInstance().getStressTestController();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -216,7 +226,7 @@ public class MainController extends AbstractController implements Initializable
     @FXML
     private void sendCmd(ActionEvent event) throws IOException, JSchException, InterruptedException {
         int seconds = 30;
-        tableViewController = Context.getInstance().getTableViewController();
+
         String ipPrefix = (String) subnetChoiceBox.getValue();
         String cmd = commandTextArea.getText();
         if (!timerLengthField.getText().equals(""))
@@ -228,7 +238,7 @@ public class MainController extends AbstractController implements Initializable
         cancelTimerBtn.fire();
 
         TimeClock tempClock;
-        timeClocks = Context.getInstance().currentClocks();
+        timeClocks = Context.getInstance().getClockInfoClocks();
 
         timeClocks.clear();
 
@@ -317,45 +327,37 @@ public class MainController extends AbstractController implements Initializable
     }
 
     @FXML private void getIPs(ActionEvent event) throws IOException, InterruptedException, ExecutionException {
-        sshHandler.checkAllHosts((String) subnetChoiceBox.getValue());
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.submit((Callable<Void>) () -> {
+                sshHandler.checkAllHosts((String) subnetChoiceBox.getValue());
+                return null;
+            });
+
     }
 
     @FXML
     private void openTableView(ActionEvent event) {
-        Node node = (Node) event.getSource();
 
-        Stage tableViewStage = new Stage();
-//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/tableViewWindow.fxml"));
-//            Parent root = loader.load();
-        tableViewRoot.setStyle(node.getScene().getRoot().getStyle());
-        tableViewStage.setTitle("Clock Info Table");
-        tableViewStage.setScene(tableViewScene);
-        tableViewStage.initModality(Modality.WINDOW_MODAL);
+        EventHandler<WindowEvent> eventHandle = new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                tableViewController.setStage(tableViewStage);
+                tableViewController.setCallingController(MainController.this);
+                tableViewController.swapCellFactories();
+                tableViewStage.setTitle("Clock Info Table");
+                tableViewStage.removeEventHandler(WindowEvent.WINDOW_SHOWING, this);
+            }
+        };
 
-            /*timeClocks.addListener(new ListChangeListener<TimeClock>() {
-                @Override
-                public void onChanged(Change<? extends TimeClock> change)
-                {
-                    while (change.next())
-                    {
-                        if (tableViewController!=null)
-                        {
-                            tableViewController.refresh((ObservableList<TimeClock>) change.getList());
-                        }
-                    }
-                }
-            });*/
-        Window primaryWindow = node.getScene().getWindow();
+        tableViewStage.addEventHandler(WindowEvent.WINDOW_SHOWING, eventHandle);
 
-        tableViewStage.initOwner(primaryWindow);
 
-        tableViewStage.setX(primaryWindow.getX() + 200);
-        tableViewStage.setY(primaryWindow.getY() + 100);
-
-        tableViewStage.setResizable(false);
         if(timeClocks!=null) {
             tableViewController.refresh(timeClocks);
         }
+        Context.getInstance().setTableViewStage(tableViewStage);
+
+        tableViewRoot.setStyle(currentScene.getRoot().getStyle());
         tableViewStage.show();
 
     }
@@ -365,7 +367,7 @@ public class MainController extends AbstractController implements Initializable
     {
         Node node = (Node) event.getSource();
 
-        Stage sftpViewStage = new Stage();
+        sftpViewStage = new Stage();
 
         sftpViewRoot.setStyle(node.getScene().getRoot().getStyle());
         sftpViewStage.setTitle("SFTP");
@@ -388,27 +390,15 @@ public class MainController extends AbstractController implements Initializable
     @FXML
     private void openConfigUtilView(ActionEvent event)
     {
-        Node node = (Node) event.getSource();
-
-        Stage configUtilViewStage = new Stage();
-
-        configUtilViewRoot.setStyle(node.getScene().getRoot().getStyle());
-        configUtilViewStage.setTitle("Configuration Utility");
-        configUtilViewStage.setScene(configUtilViewScene);
-//        configUtilViewStage.initModality(Modality.WINDOW_MODAL);
-
-        Window primaryWindow = node.getScene().getWindow();
-
-        configUtilViewStage.initOwner(primaryWindow);
-
-        configUtilViewStage.setX(primaryWindow.getX() + 200);
-        configUtilViewStage.setY(primaryWindow.getY());
-
-//        configUtilViewStage.setResizable(false);
-        configUtilViewStage.setMinHeight(750);
-        configUtilViewStage.setMinWidth(650);
-        configUtilViewStage.setMaxHeight(1080);
-        configUtilViewStage.setMaxWidth(1200);
+        configUtilViewRoot.setStyle(currentScene.getRoot().getStyle());
+        EventHandler<WindowEvent> eventHandle = new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                configUtilController.setStage(stressTestViewStage);
+                configUtilViewStage.removeEventHandler(WindowEvent.WINDOW_SHOWING, this);
+            }
+        };
+        configUtilViewStage.addEventHandler(WindowEvent.WINDOW_SHOWING, eventHandle);
         configUtilViewStage.show();
         letterbox(configUtilViewScene, (GridPane) configUtilViewScene.getRoot());
 
@@ -417,35 +407,15 @@ public class MainController extends AbstractController implements Initializable
     @FXML
     private void openStressTestView(ActionEvent event)
     {
-        Node node = (Node) event.getSource();
-
-        Stage stressTestViewStage = new Stage();
-
-        stressTestViewRoot.setStyle(node.getScene().getRoot().getStyle());
-        stressTestViewStage.setTitle("Stress Test");
-        stressTestViewStage.setScene(stressTestViewScene);
-
-//        stressTestViewStage.initModality(Modality.WINDOW_MODAL);
-
-        Window primaryWindow = node.getScene().getWindow();
-
-        stressTestViewStage.initOwner(primaryWindow);
-
-        stressTestViewStage.setX(primaryWindow.getX() + 200);
-        stressTestViewStage.setY(primaryWindow.getY());
-
-//        stressTestViewStage.setResizable(false);
-
-        stressTestViewStage.setMinHeight(750);
-        stressTestViewStage.setMinWidth(500);
-        stressTestViewStage.setMaxHeight(1080);
-        stressTestViewStage.setMaxWidth(1200);
-//        ((GridPane)stressTestViewScene.getRoot()).getChildren().forEach(child->{
-//           child.setScaleX(1.25);
-//           child.setScaleY(1.25);
-//        });
-//        ((GridPane)stressTestViewScene.getRoot()).setScaleY(1.25);
-
+        stressTestViewRoot.setStyle(currentScene.getRoot().getStyle());
+        EventHandler<WindowEvent> eventHandle = new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                stressTestController.setStage(stressTestViewStage);
+                stressTestViewStage.removeEventHandler(WindowEvent.WINDOW_SHOWING, this);
+            }
+        };
+        stressTestViewStage.addEventHandler(WindowEvent.WINDOW_SHOWING, eventHandle);
         stressTestViewStage.show();
 
         letterbox(stressTestViewScene, (GridPane)stressTestViewScene.getRoot());
@@ -465,6 +435,7 @@ public class MainController extends AbstractController implements Initializable
         }
         else if(darkLight)
         {
+
             node.getScene().getRoot().setStyle("");
             darkLight = false;
         }
@@ -547,7 +518,7 @@ public class MainController extends AbstractController implements Initializable
     }
 
     @Override
-    public String getPassword(String ip){
+    public String getPassword(String... ip){
         String pwdStr = this.passwordField.getText();
         String password = "synergy";
         if(passwordRadioGroup.getSelectedToggle() == macAddrPwdRadio)
@@ -558,7 +529,7 @@ public class MainController extends AbstractController implements Initializable
             int day = Integer.valueOf(dayFormat.format(new Date()));
             int month = Integer.valueOf(monthFormat.format(new Date()));
             try {
-                mac = sshHandler.getLastFourMAC(ip);
+                mac = sshHandler.getLastFourMAC(ip[0]);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -640,5 +611,104 @@ public class MainController extends AbstractController implements Initializable
         scene.widthProperty().addListener(sizeListener);
         scene.heightProperty().addListener(sizeListener);
     }
+
+    public void setCurrentStage(Stage stage)
+    {
+        this.currentStage = stage;
+        this.currentScene = stage.getScene();
+    }
+
+    public void setStages()
+    {
+        setUpTableViewStage();
+        setUpStressTestViewStage();
+        setUpConfigUtilViewStage();
+    }
+
+
+
+
+
+    private void setUpTableViewStage()
+    {
+        tableViewStage = new Stage();
+        tableViewStage.setTitle("Clock Info Table");
+        tableViewStage.setScene(tableViewScene);
+        tableViewStage.initModality(Modality.WINDOW_MODAL);
+
+        Window primaryWindow = currentScene.getWindow();
+
+        tableViewStage.initOwner(primaryWindow);
+
+        tableViewStage.setX(primaryWindow.getX() + 200);
+        tableViewStage.setY(primaryWindow.getY() + 100);
+
+
+
+        tableViewStage.setResizable(false);
+        Context.getInstance().setTableViewStage(tableViewStage);
+    }
+
+    private void setUpStressTestViewStage() {
+
+
+
+        stressTestViewStage = new Stage();
+
+        stressTestViewRoot.setStyle(currentScene.getRoot().getStyle());
+        stressTestViewStage.setTitle("Stress Test");
+        stressTestViewStage.setScene(stressTestViewScene);
+
+//        stressTestViewStage.initModality(Modality.WINDOW_MODAL);
+
+        Window primaryWindow = currentScene.getWindow();
+
+        stressTestViewStage.initOwner(primaryWindow);
+
+        stressTestViewStage.setX(primaryWindow.getX() + 200);
+        stressTestViewStage.setY(primaryWindow.getY());
+
+//        stressTestViewStage.setResizable(false);
+
+        stressTestViewStage.setMinHeight(750);
+        stressTestViewStage.setMinWidth(500);
+        stressTestViewStage.setMaxHeight(1080);
+        stressTestViewStage.setMaxWidth(1200);
+        Context.getInstance().setStressTestStage(stressTestViewStage);
+//        ((GridPane)stressTestViewScene.getRoot()).getChildren().forEach(child->{
+//           child.setScaleX(1.25);
+//           child.setScaleY(1.25);
+//        });
+//        ((GridPane)stressTestViewScene.getRoot()).setScaleY(1.25);
+
+
+        Context.getInstance().setStressTestStage(stressTestViewStage);
+    }
+
+    private void setUpConfigUtilViewStage() {
+
+
+        configUtilViewStage = new Stage();
+
+        configUtilViewRoot.setStyle(currentScene.getRoot().getStyle());
+        configUtilViewStage.setTitle("Configuration Utility");
+        configUtilViewStage.setScene(configUtilViewScene);
+//        configUtilViewStage.initModality(Modality.WINDOW_MODAL);
+
+        Window primaryWindow = currentScene.getWindow();
+
+        configUtilViewStage.initOwner(primaryWindow);
+
+        configUtilViewStage.setX(primaryWindow.getX() + 200);
+        configUtilViewStage.setY(primaryWindow.getY());
+
+//        configUtilViewStage.setResizable(false);
+        configUtilViewStage.setMinHeight(750);
+        configUtilViewStage.setMinWidth(650);
+        configUtilViewStage.setMaxHeight(1080);
+        configUtilViewStage.setMaxWidth(840);
+        Context.getInstance().setConfigUtilStage(configUtilViewStage);
+    }
+
 
 }
