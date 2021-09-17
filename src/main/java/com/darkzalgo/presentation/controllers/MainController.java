@@ -505,16 +505,19 @@ public class MainController extends AbstractController implements Initializable
         errorTextArea.appendText("["+ date +"] -- " + msg + "\n");
     }
     @Override
-    public void setSelectedIps(String ip)
+    public void setSelectedIps(ObservableList<TimeClock> selectedItems)
     {
-        if (ipTextArea.getText().equals(""))
-        {
-            ipTextArea.setText(ip);
+        selectedItems.forEach((clock -> {
+         String ip =clock.getIpAddress().split("\\.")[3];
+            if (ipTextArea.getText().equals(""))
+            {
+                ipTextArea.setText(ip);
 
-        }else
-        {
-            ipTextArea.appendText(","+ip);
-        }
+            }else
+            {
+                ipTextArea.appendText(","+ip);
+            }
+        }));
     }
 
     @Override

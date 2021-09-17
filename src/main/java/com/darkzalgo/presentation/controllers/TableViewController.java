@@ -5,6 +5,7 @@ import com.darkzalgo.model.TimeClock;
 import com.darkzalgo.presentation.gui.Context;
 import com.darkzalgo.utility.SSHHandler;
 import com.jcraft.jsch.JSchException;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -24,6 +25,7 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TableViewController implements Initializable
 {
@@ -143,10 +145,9 @@ public class TableViewController implements Initializable
     {
         System.out.println(callingController.getClass().getName());
         if (callingController.getClass().getName().contains("StressTestController")) {
-            refreshBtn.setVisible(false);
+            refreshBtn.setVisible(true);
             selectIpByImageBox.setVisible(false);
             selectIpByImageBtn.setVisible(false);
-            selectIPsBtn.setVisible(false);
             clockInfoTable.getColumns().forEach(timeClockTableColumn -> {
                 String id = timeClockTableColumn.getId();
                 if (!id.contains("mac") && !id.contains("ip")) {
@@ -190,26 +191,25 @@ public class TableViewController implements Initializable
     @FXML
     private void selectIPsByImage(ActionEvent event)
     {
+
         if(selectIpByImageBox.getValue()!= null)
         {
-            mainController.ipTextArea.clear();
+//            mainController.ipTextArea.clear();
             String image = selectIpByImageBox.getValue();
             ObservableList<TimeClock> itemsByImage = clockInfoTable.getItems();
-            itemsByImage.forEach((clock -> {
-                if (clock.getImage().equals(image))
-                mainController.setSelectedIps(clock.getIpAddress().split("\\.")[3]);
-            }));
+
+            ObservableList<TimeClock> filteredClocks = itemsByImage.stream()
+                    .filter(clock -> clock.getImage().equals(image))
+                    .collect(Collectors.toCollection(FXCollections::observableArrayList));
+
+            callingController.setSelectedIps(filteredClocks);
         }
     }
 
     @FXML
     private void selectIPs(ActionEvent event)
     {
-        mainController.ipTextArea.clear();
-        ObservableList<TimeClock> selectedItems = clockInfoTable.getSelectionModel().getSelectedItems();
-        selectedItems.forEach((n->{
-            mainController.setSelectedIps(n.getIpAddress().split("\\.")[3]);
-        }));
+            callingController.setSelectedIps(clockInfoTable.getSelectionModel().getSelectedItems());
     }
 
     public void refresh( ObservableList<TimeClock> clocks )

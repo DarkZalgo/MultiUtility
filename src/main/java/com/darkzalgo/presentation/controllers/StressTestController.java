@@ -192,7 +192,19 @@ public class StressTestController extends AbstractController implements Initiali
     }
 
     @Override
-    public void setSelectedIps(String ip) {
+    public void setSelectedIps(ObservableList<TimeClock> selectedItems) {
+
+        selectedItems.forEach((clock -> {
+            String ip =clock.getIpAddress().split("\\.")[3];
+            if (ipTextArea.getText().equals(""))
+            {
+                ipTextArea.setText(ip);
+
+            }else
+            {
+                ipTextArea.appendText(","+ip);
+            }
+        }));
 
     }
 
@@ -248,6 +260,7 @@ public class StressTestController extends AbstractController implements Initiali
                     tempClock.setIpAddress(ipPrefix + ip);
 
                         this.pushTestPool.submit(new pushTestThread(tempClock));
+
                     }
 
                     });
@@ -335,6 +348,16 @@ public class StressTestController extends AbstractController implements Initiali
             sshHandler.checkAllHosts((String) selectIPCBox.getValue(), new int[]{22});
             return null;
         });
+    }
+
+    @FXML private void cancel(ActionEvent event)
+    {
+        this.pushTestPool.shutdown();
+    }
+
+    @FXML private void forceCancel(ActionEvent event)
+    {
+        this.pushTestPool.shutdownNow();
     }
 
     private void setProgressBarProgress(ProgressBar bar, double val)
@@ -483,6 +506,60 @@ public class StressTestController extends AbstractController implements Initiali
                         outputLbl.setUserData(false);
                         return "notInfor";
                     }
+                    String res = "";
+
+                    setLabelText(outputLbl,"");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Backing up WBCS directories");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(cp -rf /home/admin/wbcs /home/admin/wbcs-bak); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Backing up keypad daemon");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(cp /usr/sbin/spikbdinputattach /usr/sbin/spikbdinputattach-bak && cp /usr/sbin/spikbdinputattachdebug /usr/sbin/spikbdinputattachdebug-bak); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Shutting down watchdog");
+                    res = sshHandler.sendCmdBlocking(clock, session, "killall watchdog; killall 2416_dog ; killall watchdogSoft ; shutdownwdt");
+
+                    setLabelText(outputLbl,"Shutting down Java Application");
+                    res = sshHandler.sendCmdBlocking(clock, session, "killall java spikbdinputattach spikbdinputattachdebug");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Unzipping Stress Test tarball");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(tar -zxvf /st*.tar.gz -C / && sync); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output|tail -n 1; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                    } else {
+
+                    }
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(tar -zxvf /st*.tar.gz -C / && sync); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output|tail -n 1; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                    } else {
+
+                    }
+
+
+
+
 
 
                     setLabelText(outputLbl, "Getting NTP servers from " + ip);
