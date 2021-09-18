@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.Time;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -380,6 +382,7 @@ public class StressTestController extends AbstractController implements Initiali
     {
         Label outputLbl;
         ProgressBar progressBar;
+        Session session;
 
         TimeClock clock;
         int counter = 0;
@@ -400,6 +403,8 @@ public class StressTestController extends AbstractController implements Initiali
             }
             return null;
         }
+
+
         @Override
         protected String doInBackground() throws Exception {
             try {
@@ -451,7 +456,7 @@ public class StressTestController extends AbstractController implements Initiali
 
                 setProgressBarProgress(progressBar, -1);
                 setLabelText(outputLbl, "Connecting to " + clock.getIpAddress());
-                Session session = null;//sshHandler.longConnect(clock);
+                 session = null;//sshHandler.longConnect(clock);
 //                String stFile = "";
 //                sshHandler.sendThroughSFTP(clock, new String[]{"put", stFile, "/"});
 
@@ -474,6 +479,7 @@ public class StressTestController extends AbstractController implements Initiali
                 setProgressBarProgress(progressBar, -1);
 
                 String ip = clock.getIpAddress();
+                String lastOctet=clock.getIpAddress().split("\\.")[3];
                 setLabelText(outputLbl, "Attempting to connect to " + ip);
                 String fullIP = sshHandler.checkHost(ip, new int[]{22});
                 if(fullIP != null) {
@@ -516,20 +522,40 @@ public class StressTestController extends AbstractController implements Initiali
 
                     }
 
+                    setLabelText(outputLbl,"Getting Clock Model");
+                    String model = sshHandler.sendCmdBlocking(clock, session, "if [ -d /etc/init.d/synergyX ]; then echo Synergy/X ; elif [ -d /etc/init.d/synergy2416 ]; then echo Synergy/2416; fi");
+                    if(model.contains("Synergy")) {
+                        setProgressBarProgress(progressBar, (double) 1 / 19);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Getting version of WBCS");
+                    String wbcsVer = sshHandler.getInforWBCSVers(clock, session);
+                        setProgressBarProgress(progressBar, (double) 2 / 19);
+
+
+
+
                     setLabelText(outputLbl,"Backing up WBCS directories");
                     res = sshHandler.sendCmdBlocking(clock, session, "output=$(cp -rf /home/admin/wbcs /home/admin/wbcs-bak); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
                     if(res.equals("0")) {
-                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                        setProgressBarProgress(progressBar, (double) 3 / 19);
                     } else {
 
+                        sshHandler.sendCmdBlocking(clock, session, "reboot");
+                        session.disconnect();
+                        return "Failed during directory backup";
                     }
 
                     setLabelText(outputLbl,"Backing up keypad daemon");
                     res = sshHandler.sendCmdBlocking(clock, session, "output=$(cp /usr/sbin/spikbdinputattach /usr/sbin/spikbdinputattach-bak && cp /usr/sbin/spikbdinputattachdebug /usr/sbin/spikbdinputattachdebug-bak); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
                     if(res.equals("0")) {
-                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                        setProgressBarProgress(progressBar, (double) 4 / 19);
                     } else {
-
+                        sshHandler.sendCmdBlocking(clock, session, "reboot");
+                        session.disconnect();
+                        return "Failed during keypad backup";
                     }
 
                     setLabelText(outputLbl,"Shutting down watchdog");
@@ -538,7 +564,7 @@ public class StressTestController extends AbstractController implements Initiali
                     setLabelText(outputLbl,"Shutting down Java Application");
                     res = sshHandler.sendCmdBlocking(clock, session, "killall java spikbdinputattach spikbdinputattachdebug");
                     if(res.equals("0")) {
-                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                        setProgressBarProgress(progressBar, (double) 5 / 19);
                     } else {
 
                     }
@@ -546,16 +572,132 @@ public class StressTestController extends AbstractController implements Initiali
                     setLabelText(outputLbl,"Unzipping Stress Test tarball");
                     res = sshHandler.sendCmdBlocking(clock, session, "output=$(tar -zxvf /st*.tar.gz -C / && sync); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output|tail -n 1; fi");
                     if(res.equals("0")) {
-                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                        setProgressBarProgress(progressBar, (double) 6 / 19);
                     } else {
 
                     }
-                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(tar -zxvf /st*.tar.gz -C / && sync); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output|tail -n 1; fi");
+
+                    switch (wbcsVer)
+                    {
+
+                    }
+
+
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(sed -ri \'s|SleepAfterInKey(.*)|SleepAfterInKey=7|g\' /etc/spikbd.conf); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
                     if(res.equals("0")) {
-                        setProgressBarProgress(progressBar, (double) 1 / 15);
+                        setProgressBarProgress(progressBar, (double) 7 / 19);
                     } else {
 
                     }
+
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(tar -zxvf /wbcs6.tar.gz -C / && sync); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 8 / 19);
+                    } else {
+
+                    }
+                    setLabelText(outputLbl,"Updating settings configuration with new reader name");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(sed -ri \'s|(wbsynch.webservice.serverName\\s*=\\s*).*|\\1SYNERGY-TEST"+ lastOctet+"|g\' /home/admin/wbcs/conf/settings.conf && sync); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 9 / 19);
+                    } else {
+
+                    }
+
+//                    if synergy/X or A20 use this
+
+                    setLabelText(outputLbl,"Updating settings configuration with new reader name");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(sed -ri \'s|(wbsynch.webservice.serverName\\s*=\\s*).*|\\1SYNERGY-TEST"+ lastOctet+"|g\' /home/admin/wbcs/conf/settings.conf && " +
+                            "sed -ri \'s|(wbsynch.webservice.url\\s*=\\s*).*|\\1https:\\/\\/qawfmclock-wfm.cloud.infor.com\\/axis\\/services|g\' /home/admin/wbcs/conf/settings.conf && " +
+                            "sed -ri \'s|(wbsynch.webservice.url\\s*=\\s*).*|\\1https:\\/\\/qawfmclock-wfm.cloud.infor.com\\/axis\\/services|g\' /home/admin/wbcs/conf/settings.conf && " +
+                            "sed -ri \'s|(wbsynch.webservice.username\\s*=\\s*).*|\\1clockuser|g\' /home/admin/wbcs/conf/settings.conf && " +
+                            "sync); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 10 / 19);
+                    } else {
+
+                    }
+
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(sed -ri \'1s/^/#This value enables or disables skip of time approvals\\n " +
+                            "approval.process.skip.enabled=true\\n" +
+                            "\\n" +
+                            "#This value enables or disables skip all of time approvals\\n" +
+                            "approval.process.skipall.enabled=true/g\' /home/admin/wbcs/conf/settings.conf && sync ); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 11 / 19);
+                    } else {
+
+                    }
+
+                    String newIP = clock.getIpAddress().replace("192.168.6.", "192.168.7.");
+                    setLabelText(outputLbl,"Setting new clock IP address to " + newIP);
+                    sshHandler.sendCmdBlocking(clock, session, Cmds.SETNETINTERFACES, "eth0", "static", newIP, "255.255.254.0", "192.168.7.1");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(cat /etc/network/interfaces|grep -A 3 static|grep " + newIP + "); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 12 / 19);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Adding IP to stress test configuration");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(sed -r \"s|(BADGE_NUMBER=)(.*)|\\1\\2-" + newIP + "-StressTest|g\" -i /home/admin/wbcs/conf/*.properties && " +
+                            "sed -r \"s|(PROMPT_BADGE=)(.*)|\\1\\2-" + newIP + "-StressTest|g\" -i /home/admin/wbcs/conf/*.properties); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 13 / 19);
+                    } else {
+
+                    }
+
+                    //for Synergy/X
+
+                    setLabelText(outputLbl,"Adding IP to stress test configuration");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(sed -r \"s|(BADGE_NUMBER=)(.*)|\\1\\2-" + newIP + "-StressTest|g\" -i /home/admin/wbcs/conf/*.properties && " +
+                            "sed -r \"s|(PROMPT_BADGE=)(.*)|\\1\\2-" + newIP + "-StressTest|g\" -i /home/admin/wbcs/conf/*.properties && " +
+                            "sed -ri \'s|(Skip\\s*=\\s*).*|\\1Skip\\nSKIP_ALL=Skip All|g\' /home/admin/wbcs/conf/*.properties); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 14 / 19);
+                    } else {
+
+                    }
+
+                    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy.MM.dd-HH:mm:ss");
+
+                    setLabelText(outputLbl,"Syncing Time");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(date -s " + dtf.format(LocalDateTime.now()) + " && hwclock -w --systohc); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 15 / 19);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Deleting Boot Count and Boot Log");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(rm -f /etc/bootCount /etc/bootlog.txt); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 16 / 19);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Removing Tarball");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(rm /st*.tar.gz; if [ $(ls /| grep /wbcs.*.tar.gz > /dev/null 2>&1 ; echo $?) -eq 0 ]; then rm -rf /wbcs*.tar.gz ; fi && sync); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 17 / 19);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Flushing Buffers");
+                    res = sshHandler.sendCmdBlocking(clock, session, "output=$(sync && sync ; sleep 1 ; sync && sync); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    if(res.equals("0")) {
+                        setProgressBarProgress(progressBar, (double) 18 / 19);
+                    } else {
+
+                    }
+
+                    setLabelText(outputLbl,"Rebooting clock");
+                    sshHandler.sendCmdBlocking(clock, session, "output=$(reboot); res=$? ; if [ $res -eq 0 ]; then echo $res; else echo $output; fi");
+                    setProgressBarProgress(progressBar, 1);
+
 
 
 
@@ -675,7 +817,7 @@ public class StressTestController extends AbstractController implements Initiali
                         }
                         failedClocks.add(clock);
                     }else {
-                        clock.setReason("Failed to push stress test");
+                        clock.setReason(res);
                         setLabelText(outputLbl, "Unable to push test to " + clock.getIpAddress());
                         setProgressBarProgress(progressBar, 0);
                         if (clock.getMacAddress().equals(""))
